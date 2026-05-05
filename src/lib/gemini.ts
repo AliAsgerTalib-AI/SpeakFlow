@@ -20,7 +20,8 @@ export async function analyzeSpeech(audioBase64: string, mimeType: string, scrip
           3. Biometric metrics: Pace (WPM), Confidence, Rhythm, Intonation, and Articulation.
           4. Physical vocal characteristics: Resonance, Breath management, and Vocal Health (strain/fry).
           5. Emotional tone and sentiment intensity.
-          6. Advanced detections: Micro-hesitations (sub-500ms pauses), Plosive clarity (/p/, /b/, /t/), and Environmental Signal-to-Noise quality.`
+          6. Advanced detections: Micro-hesitations (sub-500ms pauses), Plosive clarity (/p/, /b/, /t/), and Environmental Signal-to-Noise quality.
+          7. Accent Profile: Identify the primary regional/cultural accent and provide a clarity score (0-100) based on how easily a general audience would understand the speech.`
         },
         {
           inlineData: {
@@ -129,6 +130,15 @@ export async function analyzeSpeech(audioBase64: string, mimeType: string, scrip
               feedback: { type: Type.STRING }
             },
             required: ["level", "feedback"]
+          },
+          accentProfile: {
+            type: Type.OBJECT,
+            properties: {
+              detectedAccent: { type: Type.STRING },
+              clarityScore: { type: Type.NUMBER },
+              feedback: { type: Type.STRING }
+            },
+            required: ["detectedAccent", "clarityScore", "feedback"]
           }
         },
         required: [
@@ -151,7 +161,8 @@ export async function analyzeSpeech(audioBase64: string, mimeType: string, scrip
           "vocalResonance",
           "microHesitations",
           "plosiveAnalysis",
-          "environmentalNoise"
+          "environmentalNoise",
+          "accentProfile"
         ]
       }
     }

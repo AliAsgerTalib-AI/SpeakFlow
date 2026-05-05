@@ -43,6 +43,11 @@ export interface SpeechFeedback {
     level: number;
     feedback: string;
   };
+  accentProfile?: {
+    detectedAccent: string;
+    clarityScore: number;
+    feedback: string;
+  };
 }
 
 export interface SessionLog {

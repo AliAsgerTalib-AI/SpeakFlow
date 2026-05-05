@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Mic, Square, Play, RefreshCw, Loader2, Info, ChevronRight, CheckCircle2, TrendingUp, TrendingDown, Target, Zap, Trophy, AlertCircle, Stethoscope, Music, Volume2, Heart, Wind, Activity, Smile, Shield, Download, Save } from 'lucide-react';
 import { SpeechFeedback } from '@/src/types';
-import { auth } from '@/src/lib/firebase';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'motion/react';
@@ -257,7 +256,7 @@ export const PracticeSession: React.FC = () => {
       // Save to localStorage for Dashboard
       const sessionLog = {
         id: Date.now().toString(),
-        userId: auth.currentUser?.uid || 'anonymous',
+        userId: 'anonymous',
         timestamp: new Date().toISOString(),
         script: script,
         feedback: result
@@ -372,6 +371,15 @@ export const PracticeSession: React.FC = () => {
         <div className="flex flex-col items-center gap-6 p-8 bg-muted/20 rounded-2xl border-2 border-dashed border-border/50 transition-all hover:bg-muted/30">
           <AudioVisualizer isRecording={isRecording} />
           
+          {!isRecording && !feedback && (
+            <div className="text-center space-y-2 mb-2">
+                <h4 className="text-sm font-bold text-foreground">Hardware Calibration</h4>
+                <p className="text-[10px] text-muted-foreground max-w-[200px]">
+                    For best results, hold your phone <span className="text-primary font-bold">6 inches</span> from your mouth.
+                </p>
+            </div>
+          )}
+
           <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto justify-center">
             {!isRecording ? (
               <Button size="lg" onClick={handleStartRecording} className="w-full md:w-auto rounded-full px-10 h-14 bg-primary hover:bg-primary/90 transition-all active:scale-95 shadow-lg shadow-primary/20">
@@ -435,8 +443,13 @@ export const PracticeSession: React.FC = () => {
                           </Badge>
                         )}
                         {feedback.environmentalNoise && (
-                           <Badge variant="outline" className="font-mono text-[10px] text-emerald-500 border-emerald-500/20">
-                              {100 - feedback.environmentalNoise.level}% Env
+                           <Badge variant="outline" className={`font-mono text-[10px] border-emerald-500/20 ${feedback.environmentalNoise.level > 40 ? 'text-amber-500 animate-pulse' : 'text-emerald-500'}`}>
+                              {100 - feedback.environmentalNoise.level}% Env {feedback.environmentalNoise.level > 40 && " (High Noise)"}
+                           </Badge>
+                        )}
+                        {feedback.accentProfile && (
+                           <Badge variant="outline" className="font-mono text-[10px] text-indigo-500 border-indigo-500/20">
+                              {feedback.accentProfile.detectedAccent} ({feedback.accentProfile.clarityScore}%)
                            </Badge>
                         )}
                         <Badge className="bg-primary/20 text-primary border-primary/30 text-[10px]">V1.5 FLASH</Badge>

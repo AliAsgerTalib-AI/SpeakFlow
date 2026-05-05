@@ -1,58 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { auth, signIn, signOut } from '@/src/lib/firebase';
+import React, { useState } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { PracticeSession } from './components/PracticeSession';
 import { FreeSpeechSession } from './components/FreeSpeechSession';
 import { Glossary } from './components/Glossary';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toaster } from '@/components/ui/sonner';
-import { toast } from 'sonner';
-import { Mic2, LayoutDashboard, LogOut, Github, User, ShieldCheck, Sparkles, MessageSquare, BookOpen } from 'lucide-react';
+import { Mic2, LayoutDashboard, ShieldCheck, MessageSquare, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
-  const [user, setUser] = useState(auth.currentUser);
   const [activeTab, setActiveTab] = useState("practice");
 
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((u) => {
-      console.log("Auth state changed:", u?.email || "No user");
-      setUser(u);
-    });
-    return unsubscribe;
-  }, []);
-
-  const handleSignIn = async () => {
-    try {
-      if (window.self !== window.top) {
-        toast.info("If sign-in doesn't appear, please open the app in a new tab.", { duration: 5000 });
-      }
-      await signIn();
-    } catch (error: any) {
-      console.error("Sign in error:", error);
-      if (error.code === 'auth/popup-blocked') {
-        toast.error("Sign-in popup was blocked. Please allow popups or open in a new tab.");
-      } else if (error.code === 'auth/cancelled-popup-request') {
-        // User closed the popup, no need for error toast usually
-      } else {
-        toast.error(`Sign in failed: ${error.message}`);
-      }
-    }
-  };
-
-  // Removed check for user to allow guest access
-  
   return (
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20">
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary rounded-lg shadow-lg shadow-primary/20">
+            <div 
+              className="flex items-center gap-3 cursor-pointer group transition-all"
+              onClick={() => setActiveTab("practice")}
+            >
+              <div className="p-2 bg-primary rounded-lg shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform">
                 <Mic2 className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-serif italic tracking-tight">SpeakFlow</span>
+              <span className="text-xl font-serif italic tracking-tight group-hover:text-primary transition-colors">SpeakFlow</span>
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="hidden md:block">
@@ -74,25 +45,6 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4">
-             {user ? (
-               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-full border border-border/50">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-primary to-blue-400 p-[1px]">
-                     <div className="w-full h-full rounded-full bg-background overflow-hidden">
-                        {user.photoURL ? <img src={user.photoURL} alt="avatar" /> : <User className="w-full h-full p-1" />}
-                     </div>
-                  </div>
-                  <span className="text-xs font-medium max-w-[100px] truncate">{user.displayName || "Voice Explorer"}</span>
-               </div>
-             ) : (
-               <Button variant="outline" size="sm" onClick={handleSignIn} className="rounded-full gap-2">
-                 <Github className="h-4 w-4" /> Sign In
-               </Button>
-             )}
-             {user && (
-               <Button variant="ghost" size="icon" onClick={signOut} className="rounded-full hover:bg-destructive/10 hover:text-destructive">
-                  <LogOut className="h-5 w-5" />
-               </Button>
-             )}
           </div>
         </div>
 

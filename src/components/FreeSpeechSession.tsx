@@ -201,9 +201,12 @@ export const FreeSpeechSession = () => {
                   <div className="w-14 h-14 md:w-16 md:h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto shadow-inner">
                     <Mic className="h-7 w-7 md:h-8 md:w-8 text-primary" />
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 text-center">
                     <h4 className="text-lg md:text-xl font-bold">Ready to record?</h4>
                     <p className="text-[11px] md:text-xs text-muted-foreground leading-relaxed">Talk about anything. We'll analyze your pace, tone, and delivery markers.</p>
+                    <p className="text-[10px] text-primary/80 font-medium mt-3 bg-primary/5 py-1 px-3 rounded-full border border-primary/10 inline-block">
+                        Tip: Hold mic 6" away at an angle
+                    </p>
                   </div>
                 </motion.div>
               )}
@@ -328,10 +331,15 @@ export const FreeSpeechSession = () => {
                           <Badge variant="outline" className="bg-card/80 text-[10px] font-mono border-blue-500/20">{feedback.microHesitations} Hesitations</Badge>
                         )}
                         {feedback.environmentalNoise && (
-                           <Badge variant="outline" className="bg-card/80 text-[10px] font-mono border-emerald-500/20">Studio: {100 - feedback.environmentalNoise.level}% Clear</Badge>
+                           <Badge variant="outline" className={`bg-card/80 text-[10px] font-mono border-emerald-500/20 ${feedback.environmentalNoise.level > 40 ? 'text-amber-500' : ''}`}>
+                             Studio: {100 - feedback.environmentalNoise.level}% Clear {feedback.environmentalNoise.level > 40 && "⚠️"}
+                           </Badge>
                         )}
                         {feedback.plosiveAnalysis && (
                            <Badge variant="outline" className="bg-card/80 text-[10px] font-mono border-cyan-500/20">Plosives: {feedback.plosiveAnalysis.quality}%</Badge>
+                        )}
+                        {feedback.accentProfile && (
+                           <Badge variant="outline" className="bg-card/80 text-[10px] font-mono border-indigo-500/20">Accent: {feedback.accentProfile.detectedAccent}</Badge>
                         )}
                     </div>
                   </div>

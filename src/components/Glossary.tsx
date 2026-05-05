@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { 
   Target, Music, Volume2, Zap, Activity, Heart, Smile, Wind, 
   MessageSquare, BookOpen, ShieldCheck, Stethoscope, Gauge,
-  Timer, Waves, ShieldAlert
+  Timer, Waves, ShieldAlert, Globe
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -96,8 +96,29 @@ const glossaryItems = [
     title: "Environment Quality",
     icon: ShieldAlert,
     color: "text-emerald-600",
-    description: "Evaluates the Signal-to-Noise ratio of the recording. High background noise or room reverb can lead to listener fatigue and reduced clarity.",
+    description: "Evaluates the Signal-to-Noise ratio. High background noise or poor hardware resolution can mask phonetic details, potentially reducing AI accuracy.",
     benchmark: "Signal-to-Noise"
+  },
+  {
+    title: "Mic Calibration",
+    icon: Volume2,
+    color: "text-rose-500",
+    description: "Hardware-specific sensitivity calibration. Modern devices provide cleaner signals, while older hardware may introduce 'clipping' or 'hiss' that affects articulation scores.",
+    benchmark: "System Gain"
+  },
+  {
+    title: "Linguistic Accent",
+    icon: Globe,
+    color: "text-indigo-600",
+    description: "Identifies regional or cultural phonetic patterns. This is used for contextual feedback on syllable stress and vowel length expectations in different speaking environments.",
+    benchmark: "Phonetic Profile"
+  },
+  {
+    title: "Clarity Index",
+    icon: ShieldCheck,
+    color: "text-blue-600",
+    description: "A calculated metric of how easily a general audience would understand the speaker. It balances accent preservation with clear enunciation of key word terminals.",
+    benchmark: "Listener Ease"
   }
 ];
 
