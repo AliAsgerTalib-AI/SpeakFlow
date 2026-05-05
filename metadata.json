@@ -1,0 +1,6 @@
+{
+  "name": "SpeakFlow",
+  "description": "An AI-powered public speaking trainer with pronunciation feedback, pace analysis, and confidence-building exercises.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["voice_analysis", "real_time_feedback"]
+}

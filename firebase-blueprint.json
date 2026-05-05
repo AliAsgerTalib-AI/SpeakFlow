@@ -1,0 +1,22 @@
+{
+  "entities": {
+    "Session": {
+      "title": "Practice Session",
+      "description": "Records of a user's speech practice session and AI feedback.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "script": { "type": "string" },
+        "feedback": { "type": "object" }
+      },
+      "required": ["userId", "timestamp", "script", "feedback"]
+    }
+  },
+  "firestore": {
+    "/sessions/{sessionId}": {
+      "schema": "Session",
+      "description": "Public speaking practice sessions for users"
+    }
+  }
+}
