@@ -63,10 +63,14 @@ export const ScriptCard: React.FC<ScriptCardProps> = ({
 
     const scrollTop = scrollContainer.scrollTop;
     const viewportHeight = scrollContainer.clientHeight;
+    const scrollHeight = scrollContainer.scrollHeight;
     const wordTop = currentWordElement.offsetTop;
     const wordHeight = currentWordElement.offsetHeight;
 
-    const targetScroll = wordTop - viewportHeight / 3;
+    const targetScroll = Math.min(
+      wordTop - viewportHeight / 3,
+      scrollHeight - viewportHeight
+    );
 
     if (wordTop < scrollTop || wordTop + wordHeight > scrollTop + viewportHeight) {
       scrollContainer.scrollTop = Math.max(0, targetScroll);
