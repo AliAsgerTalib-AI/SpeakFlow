@@ -166,3 +166,25 @@ export const SPEECH_FEEDBACK_SCHEMA = {
     "expertSuggestion",
   ],
 };
+
+export const SCRIPT_ANNOTATION_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    segments: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          type: { type: Type.STRING },
+          content: { type: Type.STRING },
+          instruction: { type: Type.STRING },
+          detail: { type: Type.STRING },
+        },
+        required: ["type"],
+      },
+    },
+    estimatedDuration: { type: Type.STRING },
+    overallTips: { type: Type.STRING },
+  },
+  required: ["segments", "estimatedDuration", "overallTips"],
+};

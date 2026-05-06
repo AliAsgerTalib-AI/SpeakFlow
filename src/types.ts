@@ -104,3 +104,32 @@ export interface UserProfile {
   neurodiversityFlag: boolean;
   goldenStateBaseline: GoldenStateBaseline | null;
 }
+
+export type AnnotationInstructionType =
+  | 'PAUSE'
+  | 'STRESS'
+  | 'BREATH'
+  | 'LOOK_AROUND'
+  | 'SLOW_DOWN'
+  | 'SPEED_UP'
+  | 'LOWER_VOICE'
+  | 'PROJECT_VOICE';
+
+export interface AnnotationTextSegment {
+  type: 'text';
+  content: string;
+}
+
+export interface AnnotationInstructionSegment {
+  type: 'instruction';
+  instruction: AnnotationInstructionType;
+  detail: string;
+}
+
+export type AnnotationSegment = AnnotationTextSegment | AnnotationInstructionSegment;
+
+export interface ScriptAnnotation {
+  segments: AnnotationSegment[];
+  estimatedDuration: string;
+  overallTips: string;
+}

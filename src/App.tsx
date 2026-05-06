@@ -3,12 +3,13 @@ import { Dashboard } from './components/Dashboard';
 import { PracticeSession } from './components/PracticeSession';
 import { FreeSpeechSession } from './components/FreeSpeechSession';
 import { Glossary } from './components/Glossary';
+import { ScriptAnnotator } from './components/ScriptAnnotator';
 import { PronunciationDictionary } from './components/PronunciationDictionary';
 import { VocalProfileSetup } from './components/VocalProfileSetup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
-import { Mic2, LayoutDashboard, ShieldCheck, MessageSquare, BookOpen, BookMarked, UserCircle2 } from 'lucide-react';
+import { Mic2, LayoutDashboard, ShieldCheck, MessageSquare, BookOpen, BookMarked, UserCircle2, PenLine } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { UserProfile, SpeechFeedback } from '@/src/types';
@@ -67,6 +68,9 @@ export default function App() {
                 <TabsTrigger value="glossary" className="rounded-full px-4 h-9 gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary border-transparent">
                   <BookOpen className="h-4 w-4" /> Glossary
                 </TabsTrigger>
+                <TabsTrigger value="annotator" className="rounded-full px-4 h-9 gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary border-transparent">
+                  <PenLine className="h-4 w-4" /> Annotator
+                </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -110,6 +114,9 @@ export default function App() {
               <TabsTrigger value="glossary" className="flex-1 rounded-none gap-2 data-[state=active]:border-b-2 data-[state=active]:border-primary transition-none">
                 <BookOpen className="h-4 w-4" />
               </TabsTrigger>
+              <TabsTrigger value="annotator" className="flex-1 rounded-none gap-2 data-[state=active]:border-b-2 data-[state=active]:border-primary transition-none">
+                <PenLine className="h-4 w-4" />
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -133,6 +140,7 @@ export default function App() {
             {activeTab === "dashboard" && <Dashboard />}
             {activeTab === "dictionary" && <PronunciationDictionary />}
             {activeTab === "glossary" && <Glossary />}
+            {activeTab === "annotator" && <ScriptAnnotator />}
           </motion.div>
         </AnimatePresence>
       </main>

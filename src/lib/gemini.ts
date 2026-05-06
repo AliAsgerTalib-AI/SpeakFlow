@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
-import { SpeechFeedback, Exercise, UserProfile } from "@/src/types";
-import { SPEECH_FEEDBACK_SCHEMA, EXERCISES_SCHEMA } from "./gemini.schema";
+import { SpeechFeedback, Exercise, UserProfile, ScriptAnnotation } from "@/src/types";
+import { SPEECH_FEEDBACK_SCHEMA, EXERCISES_SCHEMA, SCRIPT_ANNOTATION_SCHEMA } from "./gemini.schema";
 import { GeminiError, GeminiErrorType, GeminiResult, validateRequiredFields } from "./errors";
 import { buildGoalContext } from "./vocalEngine";
 
@@ -56,6 +56,8 @@ const REQUIRED_FIELDS = [
   "stressProfile",
   "expertSuggestion",
 ];
+
+const ANNOTATION_REQUIRED_FIELDS = ["segments", "estimatedDuration", "overallTips"];
 
 export async function analyzeSpeech(
   audioBase64: string,
@@ -290,6 +292,116 @@ Create exercises that are brief (1-2 minutes), actionable, and targeted to impro
     return {
       success: false,
       error: new GeminiError(GeminiErrorType.API_ERROR, message, {}),
+    };
+  }
+}
+
+export async function annotateScript(scriptText: string): Promise<GeminiResult<ScriptAnnotation>> {
+  try {
+    const prompt = `You are a world-class speech coach and presentation trainer. Your job is to annotate a speaker's script with precise delivery instructions so they can perform it with confidence and impact.
+
+Analyze the script below and break it into alternating segments of raw text and delivery instructions. Every instruction must be placed at the exact moment in the script where the speaker should execute it.
+
+Available instruction types and when to use them:
+- PAUSE: Strategic silence. Use after key points, before important reveals, or to let emotion land. Include duration in detail (e.g. "2 seconds").
+- STRESS: Emphasize a word or short phrase for maximum impact. Include which word(s) and why.
+- BREATH: Remind the speaker to take a controlled breath before a long phrase or after an emotional moment.
+- LOOK_AROUND: Prompt the speaker to make eye contact with different parts of the audience. Use at natural transition points.
+- SLOW_DOWN: Reduce pace for complex ideas, emotional weight, or to create gravitas.
+- SPEED_UP: Increase energy for exciting moments, lists, or to build momentum.
+- LOWER_VOICE: Drop to a more intimate or authoritative register for contrast and emphasis.
+- PROJECT_VOICE: Boost volume and forward resonance for audience engagement, calls to action, or climactic moments.
+
+RULES:
+1. Every segment must be either { "type": "text", "content": "..." } or { "type": "instruction", "instruction": "<TYPE>", "detail": "<coaching note>" }.
+2. Text segments must contain verbatim excerpts from the script — do not paraphrase.
+3. Do not skip any part of the script. The concatenation of all "text" segment content values must reproduce the original script in full.
+4. Place 6–14 instructions throughout the script. More instructions in dense, complex or climactic sections.
+5. The "detail" field must be a specific, actionable coaching note (1–2 sentences max).
+6. estimatedDuration: Give a human-readable time estimate for delivery at a professional speaking pace (e.g. "2 minutes 15 seconds").
+7. overallTips: Provide 2–3 sentences of macro delivery advice for this specific script.
+
+Script to annotate:
+"""
+${scriptText}
+"""`;
+
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: {
+        parts: [{ text: prompt }],
+      },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: SCRIPT_ANNOTATION_SCHEMA,
+      },
+    });
+
+    if (!response.text) {
+      return {
+        success: false,
+        error: new GeminiError(
+          GeminiErrorType.API_ERROR,
+          "Gemini API returned empty response for annotation",
+          {}
+        ),
+      };
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(response.text);
+    } catch (parseError) {
+      return {
+        success: false,
+        error: new GeminiError(
+          GeminiErrorType.PARSE_ERROR,
+          "Failed to parse annotation response as JSON",
+          {
+            responseText: response.text.slice(0, 200),
+            parseError: parseError instanceof Error ? parseError.message : String(parseError),
+          }
+        ),
+      };
+    }
+
+    if (!parsed || typeof parsed !== "object") {
+      return {
+        success: false,
+        error: new GeminiError(
+          GeminiErrorType.VALIDATION_ERROR,
+          "Annotation response is not a valid object",
+          { receivedType: typeof parsed }
+        ),
+      };
+    }
+
+    const missingFields = validateRequiredFields(
+      parsed as Record<string, unknown>,
+      ANNOTATION_REQUIRED_FIELDS
+    );
+    if (missingFields.length > 0) {
+      return {
+        success: false,
+        error: new GeminiError(
+          GeminiErrorType.MISSING_FIELDS,
+          `Annotation response missing required fields: ${missingFields.join(", ")}`,
+          { missingFields }
+        ),
+      };
+    }
+
+    return {
+      success: true,
+      data: parsed as ScriptAnnotation,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error during annotation";
+    return {
+      success: false,
+      error: new GeminiError(GeminiErrorType.API_ERROR, message, {
+        errorType: error instanceof Error ? error.constructor.name : typeof error,
+      }),
     };
   }
 }
