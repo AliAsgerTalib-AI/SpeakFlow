@@ -30,6 +30,8 @@ export const PracticeSession: React.FC = () => {
 
   // Prevent double-fire of analysis
   const analysisTriggeredRef = useRef(false);
+  // Track if we should keep recognition running
+  const keepRecognitionRunningRef = useRef(false);
 
   // Show toast notification for recorder errors
   React.useEffect(() => {
@@ -81,6 +83,16 @@ export const PracticeSession: React.FC = () => {
       recognitionInstance.onend = () => {
         setSpeechRecognitionStatus('⏸️ Stopped');
         console.log('Speech recognition ended');
+
+        // Restart if we're still recording (work around mobile API issues)
+        if (keepRecognitionRunningRef.current) {
+          console.log('Restarting speech recognition...');
+          try {
+            recognitionInstance.start();
+          } catch (err) {
+            console.error('Failed to restart recognition:', err);
+          }
+        }
       };
 
       setRecognition(recognitionInstance);
@@ -135,6 +147,7 @@ export const PracticeSession: React.FC = () => {
     setRealTimeTranscript("");
     resetRecording();
     analysisTriggeredRef.current = false;
+    keepRecognitionRunningRef.current = true;
     startRecording();
     if (recognition) {
       try {
@@ -146,6 +159,7 @@ export const PracticeSession: React.FC = () => {
   };
 
   const handleStopAndAnalyze = async () => {
+    keepRecognitionRunningRef.current = false;
     stopRecording();
     if (recognition) {
       try {
