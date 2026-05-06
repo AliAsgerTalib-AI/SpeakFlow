@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +29,14 @@ export const ScriptCard: React.FC<ScriptCardProps> = ({
   onLoadNewScript,
 }) => {
   const scrollViewportRef = useRef<HTMLDivElement>(null);
+  const [debugInfo, setDebugInfo] = useState<{
+    currentWordIndex: number;
+    currentWord: string;
+    scrollTop: number;
+    scrollHeight: number;
+    wordElementsFound: number;
+    transcriptWords: number;
+  } | null>(null);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -37,9 +45,12 @@ export const ScriptCard: React.FC<ScriptCardProps> = ({
   };
 
   useEffect(() => {
-    if (!isRecording || !scrollViewportRef.current) return;
+    if (!isRecording || !scrollViewportRef.current) {
+      setDebugInfo(null);
+      return;
+    }
 
-    const cleanScript = script.replace(/[*_#]/g, '');
+    const cleanScript = script.replace(/[*_#](/g, '');
     const scriptWords = cleanScript.split(/\s+/).filter(w => w.length > 0);
     const transcriptWords = realTimeTranscript
       .toLowerCase()
@@ -50,28 +61,22 @@ export const ScriptCard: React.FC<ScriptCardProps> = ({
     const wordStatuses = computeWordStatuses(scriptWords, transcriptWords);
     const currentWordIndex = wordStatuses.findIndex(status => status === 'current');
 
-    if (currentWordIndex === -1) {
-      console.log('No current word found');
-      return;
-    }
-
     const wordElements = scrollViewportRef.current.querySelectorAll('span[data-word-index]');
-    console.log('Found word elements:', wordElements.length, 'looking for index:', currentWordIndex);
+    const currentWordElement = wordElements[currentWordIndex] as HTMLElement | undefined;
 
-    if (wordElements.length === 0) {
-      console.log('No word elements found in viewport');
+    setDebugInfo({
+      currentWordIndex,
+      currentWord: currentWordElement?.textContent || '—',
+      scrollTop: scrollViewportRef.current.scrollTop,
+      scrollHeight: scrollViewportRef.current.scrollHeight,
+      wordElementsFound: wordElements.length,
+      transcriptWords: transcriptWords.length,
+    });
+
+    if (currentWordIndex === -1 || !currentWordElement || wordElements.length === 0) {
       return;
     }
 
-    const currentWordElement = wordElements[currentWordIndex] as HTMLElement;
-    if (!currentWordElement) {
-      console.log('Current word element not found at index:', currentWordIndex);
-      return;
-    }
-
-    console.log('Scrolling to word:', currentWordElement.textContent, 'at index:', currentWordIndex);
-
-    // Use scrollIntoView for more reliable scrolling
     currentWordElement.scrollIntoView({
       behavior: 'auto',
       block: 'center'
@@ -162,6 +167,39 @@ export const ScriptCard: React.FC<ScriptCardProps> = ({
           )}
         </CardContent>
       </Card>
+
+      {/* Debug Panel */}
+      {isRecording && debugInfo && (
+        <Card className="border-2 border-amber-500/30 bg-amber-500/5 overflow-hidden">
+          <CardHeader className="bg-amber-500/10 pb-2">
+            <CardTitle className="font-mono text-xs uppercase tracking-wider text-amber-600">
+              Auto-Scroll Debug
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-3 pb-3">
+            <div className="grid grid-cols-2 gap-2 text-xs font-mono text-foreground/70">
+              <div>Current Word:</div>
+              <div className="text-primary font-semibold truncate">{debugInfo.currentWord}</div>
+
+              <div>Word Index:</div>
+              <div className="text-blue-500 font-semibold">{debugInfo.currentWordIndex}</div>
+
+              <div>Word Elements:</div>
+              <div className={debugInfo.wordElementsFound > 0 ? 'text-green-500 font-semibold' : 'text-red-500 font-semibold'}>
+                {debugInfo.wordElementsFound}
+              </div>
+
+              <div>Transcript Words:</div>
+              <div className="text-purple-500 font-semibold">{debugInfo.transcriptWords}</div>
+
+              <div>Scroll Pos:</div>
+              <div className="text-cyan-500 font-semibold">
+                {debugInfo.scrollTop} / {debugInfo.scrollHeight}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
