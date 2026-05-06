@@ -7,6 +7,19 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const DEFAULT_MODEL = "gemini-3-flash-preview";
 const MODEL = process.env.GEMINI_MODEL || DEFAULT_MODEL;
 
+export const ANALYSIS_SYSTEM_PROMPT = `Act as a Speech Pathologist and professional Voice Coach.
+Analyze this public speaking audio based on the following script content.
+
+Provide a detailed analysis including:
+1. Transcription and text-to-speech alignment.
+2. Pronunciation errors and clinical speech insights.
+3. Biometric metrics: Pace (WPM), Confidence, Rhythm, Intonation, and Articulation.
+4. Physical vocal characteristics: Resonance, Breath management, and Vocal Health (strain/fry).
+5. Emotional tone and sentiment intensity.
+6. Advanced detections: Micro-hesitations (sub-500ms pauses), Plosive clarity (/p/, /b/, /t/), and Environmental Signal-to-Noise quality.
+7. Accent Profile: Identify the primary regional/cultural accent and provide a clarity score (0-100) based on how easily a general audience would understand the speech.
+8. Stress & Confidence Profile: Based on vocal tremor patterns, pace variation, breath irregularity, and hesitation clustering, determine an overall stress level (0-100, where 0=calm and 100=extremely stressed). List the key nervousness indicators observed (e.g., "elevated pace", "shallow breathing", "frequent hesitations"). Identify the peak stress moment and provide coaching on managing anxiety in similar situations.`;
+
 const REQUIRED_FIELDS = [
   "transcription",
   "pronunciationFeedback",
@@ -45,18 +58,7 @@ export async function analyzeSpeech(
       contents: {
         parts: [
           {
-            text: `Act as a Speech Pathologist and professional Voice Coach.
-          Analyze this public speaking audio based on the following script content.
-
-          Provide a detailed analysis including:
-          1. Transcription and text-to-speech alignment.
-          2. Pronunciation errors and clinical speech insights.
-          3. Biometric metrics: Pace (WPM), Confidence, Rhythm, Intonation, and Articulation.
-          4. Physical vocal characteristics: Resonance, Breath management, and Vocal Health (strain/fry).
-          5. Emotional tone and sentiment intensity.
-          6. Advanced detections: Micro-hesitations (sub-500ms pauses), Plosive clarity (/p/, /b/, /t/), and Environmental Signal-to-Noise quality.
-          7. Accent Profile: Identify the primary regional/cultural accent and provide a clarity score (0-100) based on how easily a general audience would understand the speech.
-          8. Stress & Confidence Profile: Based on vocal tremor patterns, pace variation, breath irregularity, and hesitation clustering, determine an overall stress level (0-100, where 0=calm and 100=extremely stressed). List the key nervousness indicators observed (e.g., "elevated pace", "shallow breathing", "frequent hesitations"). Identify the peak stress moment and provide coaching on managing anxiety in similar situations.`,
+            text: ANALYSIS_SYSTEM_PROMPT,
           },
           {
             text: `Script to analyze against:\n${scriptText}`,

@@ -15,6 +15,8 @@ import { analyzeSpeech } from '@/src/lib/gemini';
 import { getSpeechRecognition, isSpeechRecognitionSupported } from '@/src/hooks/useSpeechRecognition';
 import { TranscriptWithFeedback } from './TranscriptWithFeedback';
 import { LiveFeedbackBar } from './LiveFeedbackBar';
+import { PromptDisplay } from './PromptDisplay';
+import { ANALYSIS_SYSTEM_PROMPT } from '@/src/lib/gemini';
 import { SpeechFeedback } from '@/src/types';
 import { toast } from 'sonner';
 
@@ -140,6 +142,8 @@ export const FreeSpeechSession = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-4 md:space-y-6 pb-20 md:pb-10 px-4 md:px-0">
+      <PromptDisplay prompt={ANALYSIS_SYSTEM_PROMPT} title="Free Speech Analysis Prompt" />
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
         <div className="space-y-1">
           <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5 uppercase tracking-widest text-[9px] font-mono px-2 py-0.5">

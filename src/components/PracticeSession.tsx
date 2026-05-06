@@ -12,6 +12,8 @@ import { ScriptCard } from './ScriptCard';
 import { RecordingControls } from './RecordingControls';
 import { FeedbackResults } from './FeedbackResults';
 import { LiveFeedbackBar } from './LiveFeedbackBar';
+import { PromptDisplay } from './PromptDisplay';
+import { ANALYSIS_SYSTEM_PROMPT } from '@/src/lib/gemini';
 
 export const PracticeSession: React.FC = () => {
   const { isRecording, recordingTime, audioUrl, audioBase64, mimeType, error: recorderError, startRecording, stopRecording, resetRecording } = useRecorder();
@@ -227,15 +229,18 @@ export const PracticeSession: React.FC = () => {
         )}
 
         {(scriptMode === 'generate' || customScriptSubmitted) && (
-          <ScriptCard
-            script={script}
-            scriptPrompt={scriptMode === 'generate' ? scriptPrompt : undefined}
-            isRecording={isRecording}
-            recordingTime={recordingTime}
-            feedback={feedback}
-            realTimeTranscript={realTimeTranscript}
-            onLoadNewScript={scriptMode === 'generate' ? loadNewScript : undefined}
-          />
+          <>
+            <PromptDisplay prompt={ANALYSIS_SYSTEM_PROMPT} title="Speech Analysis Prompt" />
+            <ScriptCard
+              script={script}
+              scriptPrompt={scriptMode === 'generate' ? scriptPrompt : undefined}
+              isRecording={isRecording}
+              recordingTime={recordingTime}
+              feedback={feedback}
+              realTimeTranscript={realTimeTranscript}
+              onLoadNewScript={scriptMode === 'generate' ? loadNewScript : undefined}
+            />
+          </>
         )}
 
         <RecordingControls
