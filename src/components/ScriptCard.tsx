@@ -58,9 +58,7 @@ export const ScriptCard: React.FC<ScriptCardProps> = ({
     const currentWordElement = wordElements[currentWordIndex] as HTMLElement;
     if (!currentWordElement) return;
 
-    const scrollContainer = scrollViewportRef.current.firstElementChild as HTMLElement;
-    if (!scrollContainer || scrollContainer.scrollHeight === 0) return;
-
+    const scrollContainer = scrollViewportRef.current;
     const scrollTop = scrollContainer.scrollTop;
     const viewportHeight = scrollContainer.clientHeight;
     const scrollHeight = scrollContainer.scrollHeight;
@@ -98,8 +96,8 @@ export const ScriptCard: React.FC<ScriptCardProps> = ({
         </div>
       </CardHeader>
       <CardContent className="pt-6 relative min-h-[200px]">
-        <ScrollArea className="h-[300px]" ref={scrollViewportRef}>
-          <div className="space-y-6">
+        <div className="h-[300px] overflow-y-auto rounded-lg" ref={scrollViewportRef}>
+          <div className="space-y-6 pr-4">
             <div
               className={`leading-relaxed font-sans transition-opacity pr-4 ${isRecording ? 'opacity-100' : 'opacity-70'}`}
             >
@@ -132,7 +130,7 @@ export const ScriptCard: React.FC<ScriptCardProps> = ({
               </motion.div>
             )}
           </div>
-        </ScrollArea>
+        </div>
         {isRecording && (
           <div className="absolute top-4 right-4 animate-pulse">
             <Badge variant="destructive" className="flex items-center gap-1">
