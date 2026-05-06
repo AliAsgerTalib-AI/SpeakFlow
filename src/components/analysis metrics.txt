@@ -1,0 +1,213 @@
+● I'll check how the different speech modes are analyzed in the codebase.
+
+  Searched for 4 patterns, read 5 files (ctrl+o to expand)
+
+● Based on the codebase, here's how the different speech types are analyzed in Speakflow:
+
+  Core Analysis Framework
+
+  All speeches (general, interview, presentation, sales) are analyzed using the same 22-metric system, evaluating both
+  technical vocal qualities and content delivery:
+
+  The 22 Core Metrics
+
+  1. Transcription — Word-for-word accuracy
+  2. Pronunciation — Mispronounced words with correction suggestions
+  3. Pace (WPM) — Ideal: 115–165 words/min (too slow <115, too fast >165)
+  4. Filler Words — Counts of "um," "uh," "like," etc.
+  5. Confidence Score — Overall speaker assurance (0–100%)
+  6. Rhythm — Speech flow and timing consistency (0–100%)
+  7. Intonation — Pitch variation and expressiveness (0–100%)
+  8. Articulation — Clarity of consonants/vowels (0–100%)
+  9. Breath Management — Breathing technique quality (0–100%)
+  10. Vocal Health — Strain level and vocal fry detection
+  11. Emotional Tone — Primary emotion + intensity
+  12. Sentiment Score — Overall positivity/negativity (0–100%)
+  13. Vocal Resonance — Sound quality and projection (0–100%)
+  14. Micro-Hesitations — Sub-500ms pauses (count)
+  15. Plosive Analysis — /p/, /b/, /t/ clarity
+  16. Environmental Noise — Background noise level (0–100%)
+  17. Accent Profile — Detected accent + clarity score (0–100%)
+  18. Stress Profile — Stress level, nervousness indicators, peak moments
+  19. Clinical Insights — Speech pathologist perspective
+  20. General Advice — 3–5 actionable coaching tips
+  21. Phrasingfeedback — How well you group ideas together
+  22. Plosive Analysis — Emphasis on clarity of hard consonants
+
+  ---
+  Mode-Specific Script Prompts
+
+  Each mode generates different script types, but the analysis metrics remain identical:
+
+  ┌──────────────┬───────────────────────────────────────────────┬───────────────────────────────────────┬──────────┐
+  │     Mode     │                  Script Type                  │             Expectations              │ Duration │
+  ├──────────────┼───────────────────────────────────────────────┼───────────────────────────────────────┼──────────┤
+  │ General      │ Professional/engaging topic (innovation,      │ Demonstrate clear communication, good │ 30–60    │
+  │              │ leadership, teamwork)                         │  pacing, confident delivery           │ sec      │
+  ├──────────────┼───────────────────────────────────────────────┼───────────────────────────────────────┼──────────┤
+  │              │ Behavioral answer ("time you overcame         │ Show structured thinking, confidence  │ 30–60    │
+  │ Interview    │ challenge," "greatest strength," "handling    │ under pressure, relevance to the      │ sec      │
+  │              │ pressure")                                    │ question                              │          │
+  ├──────────────┼───────────────────────────────────────────────┼───────────────────────────────────────┼──────────┤
+  │              │ Business/technical snippet (product feature,  │ Clarity in complex topics,            │ 30–60    │
+  │ Presentation │ quarterly results, strategy)                  │ engagement, professional tone, data   │ sec      │
+  │              │                                               │ delivery                              │          │
+  ├──────────────┼───────────────────────────────────────────────┼───────────────────────────────────────┼──────────┤
+  │              │ Product/service pitch (software, consulting,  │ Persuasiveness, energy, value         │ 30–60    │
+  │ Sales Pitch  │ premium product)                              │ proposition clarity, closing          │ sec      │
+  │              │                                               │ confidence                            │          │
+  └──────────────┴───────────────────────────────────────────────┴───────────────────────────────────────┴──────────┘
+
+  ---
+  What the System Currently Measures (No Mode-Specific Adjustments)
+
+  The analysis is universal — same metrics for all modes. However, the expectations for good scores might vary:
+
+  - Interview Mode: Watch for nervousness indicators, pace consistency under stress
+  - Sales Mode: Confidence score, emotional tone positivity, pacing energy
+  - Presentation Mode: Rhythm, intonation variety, articulation clarity
+  - General Mode: Balanced metrics across the board
+
+  ---
+  Feedback Delivered
+
+  For every analysis:
+  - ✅ 8 metric cards (Confidence, Rhythm, Intonation, Breath, Articulation, Health, Sentiment, Resonance)
+  - 🎯 Pace gauge (visual WPM rating)
+  - 📊 4 insight cards (Prosody & Phrasing, Emotional Tone, Vocal Health, Accent & Clarity, Stress Analysis)
+  - 🔍 Pronunciation feedback (if any errors found)
+  - 💬 Filler word breakdown (frequency chart)
+  - 🏆 5–7 pro coaching tips (actionable next steps)
+  - 🩺 Pathologist's perspective (clinical insights)
+  - 🎯 Targeted micro-exercises (4–6 drills for lowest-scoring areas)
+
+  Would you like me to add mode-specific expectations or different metric weights per mode? For example, prioritizing
+  "confidence" in Interview Mode or "intonation variation" in Sales Mode?
+
+✻ Brewed for 26s · 5 shells still running
+
+> how would a professional coach score in each of the above categories
+
+● Here's what a professional speaker/coach benchmark would look like across all 22 metrics:
+
+  ┌──────────────────────┬──────────────────────────────────────────┬───────────────────────────────────────────────┐
+  │        Metric        │            Professional Score            │                  Explanation                  │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Transcription        │ 99–100%                                  │ Flawless word delivery; minimal mumbling      │
+  │ Accuracy             │                                          │                                               │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Pronunciation Errors │ 0 errors                                 │ No mispronunciations; clear enunciation       │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Speaking Pace (WPM)  │ 130–150 WPM                              │ "Good" rating—upper half of ideal range,      │
+  │                      │                                          │ intentional variation                         │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Filler Words         │ 0–2 total                                │ Rare "um"/"uh"; practiced pauses instead      │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Confidence Score     │ 88–96%                                   │ Authoritative, calm, commanding presence      │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Rhythm Score         │ 85–95%                                   │ Consistent pacing, natural emphasis patterns  │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Intonation Score     │ 85–95%                                   │ Pitch variety (not monotone); expressive      │
+  │                      │                                          │ delivery                                      │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Articulation Score   │ 92–98%                                   │ Crystal-clear consonants; crisp vowels        │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Breath Management    │ 85–95%                                   │ Deep, controlled breathing; pauses for effect │
+  │ Score                │                                          │                                               │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Vocal Health         │ Strain: 0–5%, No fry                     │ Strong vocal control; no strain/fatigue       │
+  │                      │                                          │ signals                                       │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Emotional Tone       │ 85–95% match                             │ Appropriate emotion for context;              │
+  │                      │                                          │ well-calibrated intensity                     │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Sentiment Score      │ 70–85% positive                          │ Optimistic but grounded; authentic (not       │
+  │                      │                                          │ artificially cheerful)                        │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Vocal Resonance      │ 85–95%                                   │ Full, projected voice; good microphone        │
+  │                      │                                          │ presence                                      │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Micro-Hesitations    │ 0–5 total                                │ Minimal pausing/stumbling; strategic silence  │
+  │                      │                                          │ only                                          │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Plosive Clarity      │ 90–98%                                   │ Clean /p/, /b/, /t/ sounds; no plosive pops   │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Environmental Noise  │ 5–15% (85–95% clarity)                   │ Professional audio; minimal background noise  │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Accent Profile       │ 90–98%                                   │ Intelligible to general audience; no          │
+  │ Clarity              │                                          │ comprehension barriers                        │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Stress Level         │ 5–15 (out of 100)                        │ Calm, relaxed; minimal vocal tremor or        │
+  │                      │                                          │ tension                                       │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Nervousness          │ 0–1                                      │ No elevated pace, shallow breathing, or       │
+  │ Indicators           │                                          │ hesitation clustering                         │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Clinical Insights    │ "Exemplary vocal control; demonstrates   │ Speech pathologist notes advanced skill       │
+  │                      │ advanced technique"                      │                                               │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ General Advice       │ Refinement tips (mic technique, accent   │ Not fundamental fixes; advanced coaching only │
+  │                      │ softening, etc.)                         │                                               │
+  ├──────────────────────┼──────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Phrasing Quality     │ 90–98%                                   │ Ideas well-grouped; logical chunking;         │
+  │                      │                                          │ strategic pausing                             │
+  └──────────────────────┴──────────────────────────────────────────┴───────────────────────────────────────────────┘
+
+  ---
+  Mode-Specific Professional Benchmarks
+
+  A professional would adjust slightly by mode:
+
+  Interview Mode (Professional at 90/100)
+
+  - Confidence: 90–94% (composed under pressure, not overconfident)
+  - Stress: 10–20 (controlled nervous energy → credibility)
+  - Pace: 125–140 WPM (slightly slower for thoughtfulness)
+  - Filler Words: 0–1 (structured, "give me a second" beats "um")
+
+  Presentation Mode (Professional at 92/100)
+
+  - Intonation: 90–96% (more dynamic; emphasis on key points)
+  - Rhythm: 88–95% (varied pacing to highlight sections)
+  - Articulation: 94–98% (technical terms pronounced perfectly)
+  - Pace: 130–150 WPM (varies with importance of content)
+
+  Sales Pitch Mode (Professional at 91/100)
+
+  - Confidence: 92–96% (persuasive authority)
+  - Emotional Tone: "Enthusiastic/Positive" at 85–95% intensity
+  - Sentiment: 75–85% (energized, not manic)
+  - Pace: 140–160 WPM (energetic, momentum-building)
+  - Filler Words: 0–1 (no hesitation; conviction)
+
+  General Mode (Professional at 90/100)
+
+  - All metrics: Balanced 85–95% across the board
+  - Focus: consistency, clarity, professionalism
+
+  ---
+  What Would Pull a Professional's Score Down?
+
+  Even pros aren't perfect. Common reasons for sub-benchmark scores:
+
+  ❌ External factors:
+  - Poor audio quality → lower Environmental Noise clarity
+  - Unfamiliar topic → slightly higher Micro-Hesitations
+  - Distracting environment → elevated Stress profile
+
+  ❌ Technical slips:
+  - One mispronounced word → Pronunciation feedback, but still overall 95%+ confidence
+  - Rushed delivery → Articulation drops to 85–90%
+  - Monotone section → Intonation dips to 75–85%
+
+  ---
+  How to Use These Benchmarks in Speakflow
+
+  You could enhance the FeedbackResults component to:
+  1. Show a "Professional Benchmark" comparison — current score vs. pro average
+  2. Highlight gaps — "Your intonation (72%) is 15 points below pro level"
+  3. Mode-adjusted expectations — "For sales pitch, aim for 90%+ confidence"
+  4. Tier system — Beginner (50–65%), Intermediate (65–80%), Advanced (80–90%), Professional (90%+)
+
+  Would you like me to implement a benchmark comparison feature that shows users how they stack up against these
+  professional standards?

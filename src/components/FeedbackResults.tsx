@@ -12,11 +12,13 @@ import { SpeechFeedback } from '@/src/types';
 import { TranscriptWithFeedback } from './TranscriptWithFeedback';
 import { ExercisePanel } from './ExercisePanel';
 import { StressAnalysis } from './StressAnalysis';
+import { BenchmarkComparison } from './BenchmarkComparison';
 
 interface FeedbackResultsProps {
   feedback: SpeechFeedback;
   script: string;
   onDownload: () => void;
+  mode?: 'general' | 'interview' | 'presentation' | 'sales';
 }
 
 const PaceGauge: React.FC<{ wpm: number }> = ({ wpm }) => {
@@ -67,7 +69,7 @@ const PaceGauge: React.FC<{ wpm: number }> = ({ wpm }) => {
   );
 };
 
-export const FeedbackResults: React.FC<FeedbackResultsProps> = ({ feedback, script, onDownload }) => {
+export const FeedbackResults: React.FC<FeedbackResultsProps> = ({ feedback, script, onDownload, mode = 'general' }) => {
   const totalFillers = feedback.fillerWordDetection.reduce((acc, curr) => acc + curr.count, 0);
 
   return (
@@ -203,6 +205,13 @@ export const FeedbackResults: React.FC<FeedbackResultsProps> = ({ feedback, scri
           </div>
 
           <StressAnalysis feedback={feedback} />
+
+          {/* Benchmark Comparison Section */}
+          {mode && (
+            <div className="mt-8 pt-6 border-t border-border/30">
+              <BenchmarkComparison feedback={feedback} mode={mode} />
+            </div>
+          )}
 
           <div className="space-y-8">
             <div>

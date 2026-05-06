@@ -273,7 +273,7 @@ export const PracticeSession: React.FC = () => {
             </p>
           </Card>
         ) : feedback ? (
-          <FeedbackResults feedback={feedback} script={script} onDownload={handleDownload} />
+          <FeedbackResults feedback={feedback} script={script} onDownload={handleDownload} mode={sessionMode} />
         ) : (
           <Card className="h-full min-h-[600px] flex flex-col items-center justify-center p-12 text-center bg-muted/5 border-dashed border-2">
             <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-6 relative">
