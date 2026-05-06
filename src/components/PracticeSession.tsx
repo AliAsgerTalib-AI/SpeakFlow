@@ -17,6 +17,7 @@ export const PracticeSession: React.FC = () => {
   const { isRecording, recordingTime, audioUrl, audioBase64, mimeType, error: recorderError, startRecording, stopRecording, resetRecording } = useRecorder();
   const { saveSession, downloadSession } = useSessionPersistence();
   const [script, setScript] = useState<string>("Loading script...");
+  const [scriptPrompt, setScriptPrompt] = useState<string>("");
   const [scriptMode, setScriptMode] = useState<'generate' | 'custom'>('generate');
   const [customScriptInput, setCustomScriptInput] = useState<string>("");
   const [customScriptSubmitted, setCustomScriptSubmitted] = useState(false);
@@ -51,13 +52,15 @@ export const PracticeSession: React.FC = () => {
   const loadNewScript = async () => {
     if (scriptMode === 'custom') return;
     setScript("Generating a new challenge...");
+    setScriptPrompt("");
     setFeedback(null);
     setRealTimeTranscript("");
     resetRecording();
     analysisTriggeredRef.current = false;
     try {
-      const newScript = await generatePracticeScript(undefined, sessionMode);
-      setScript(newScript);
+      const result = await generatePracticeScript(undefined, sessionMode);
+      setScript(result.script);
+      setScriptPrompt(result.prompt);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : "Unknown error";
       console.error("Failed to generate script:", errorMsg);
@@ -181,30 +184,6 @@ export const PracticeSession: React.FC = () => {
           </Button>
         </div>
 
-        {/* Mode Context Tip */}
-        {sessionMode !== 'general' && (
-          <div className="p-3 bg-primary/5 rounded-lg border border-primary/10 text-xs text-muted-foreground leading-relaxed">
-            {sessionMode === 'interview' && (
-              <>
-                <span className="font-semibold text-primary">Interview Mode:</span> Focus on concise, structured answers.
-                Try the STAR method (Situation, Task, Action, Result) for behavioral questions.
-              </>
-            )}
-            {sessionMode === 'presentation' && (
-              <>
-                <span className="font-semibold text-primary">Presentation Mode:</span> Emphasize clarity, engagement,
-                and a compelling call-to-action. Start with a hook to capture attention.
-              </>
-            )}
-            {sessionMode === 'sales' && (
-              <>
-                <span className="font-semibold text-primary">Sales Mode:</span> Build conviction through a clear value
-                proposition. Use confident pacing and persuasive language. End with a strong CTA.
-              </>
-            )}
-          </div>
-        )}
-
         {/* Script Mode Selector */}
         <div className="flex gap-2">
           <Button
@@ -250,6 +229,7 @@ export const PracticeSession: React.FC = () => {
         {(scriptMode === 'generate' || customScriptSubmitted) && (
           <ScriptCard
             script={script}
+            scriptPrompt={scriptMode === 'generate' ? scriptPrompt : undefined}
             isRecording={isRecording}
             recordingTime={recordingTime}
             feedback={feedback}

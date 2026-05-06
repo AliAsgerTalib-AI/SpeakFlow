@@ -10,6 +10,7 @@ import { parseScript } from '@/src/lib/scriptParser';
 
 interface ScriptCardProps {
   script: string;
+  scriptPrompt?: string;
   isRecording: boolean;
   recordingTime: number;
   feedback: SpeechFeedback | null;
@@ -19,6 +20,7 @@ interface ScriptCardProps {
 
 export const ScriptCard: React.FC<ScriptCardProps> = ({
   script,
+  scriptPrompt,
   isRecording,
   recordingTime,
   feedback,
@@ -37,7 +39,17 @@ export const ScriptCard: React.FC<ScriptCardProps> = ({
   const { readingText } = parseScript(script);
 
   return (
-    <Card className="border-2 border-primary/20 overflow-hidden bg-card/50 backdrop-blur-sm">
+    <div className="space-y-4">
+      {scriptPrompt && (
+        <Card className="border border-border/50 bg-muted/30">
+          <CardContent className="pt-4 pb-4">
+            <p className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground mb-2">Prompt</p>
+            <p className="text-sm text-foreground/80 leading-relaxed">{scriptPrompt}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card className="border-2 border-primary/20 overflow-hidden bg-card/50 backdrop-blur-sm">
         <CardHeader className="bg-primary/5 pb-3">
           <div className="flex justify-between items-center">
             <CardTitle className="font-mono text-sm uppercase tracking-wider text-muted-foreground">
@@ -84,5 +96,6 @@ export const ScriptCard: React.FC<ScriptCardProps> = ({
           )}
         </CardContent>
       </Card>
+    </div>
   );
 };

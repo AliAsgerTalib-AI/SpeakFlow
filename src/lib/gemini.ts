@@ -147,7 +147,7 @@ export async function analyzeSpeech(
 export async function generatePracticeScript(
   topic?: string,
   mode?: 'general' | 'interview' | 'presentation' | 'sales'
-): Promise<string> {
+): Promise<{ script: string; prompt: string }> {
   try {
     const modePrompts: Record<string, string> = {
       general: `Generate ONLY a short (30-60 second) public speaking script about "%TOPIC%". It should be professional and engaging. Do not include any instructions or preamble.`,
@@ -188,7 +188,10 @@ export async function generatePracticeScript(
       throw new Error("Gemini API returned empty response for script generation");
     }
 
-    return response.text;
+    return {
+      script: response.text,
+      prompt: prompt,
+    };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error during script generation";
     console.error("Script generation error:", message);
