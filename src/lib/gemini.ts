@@ -13,12 +13,14 @@ Analyze this public speaking audio based on the following script content.
 Provide a detailed analysis including:
 1. Transcription and text-to-speech alignment.
 2. Pronunciation errors and clinical speech insights.
-3. Biometric metrics: Pace (WPM), Confidence, Rhythm, Intonation, and Articulation.
-4. Physical vocal characteristics: Resonance, Breath management, and Vocal Health (strain/fry).
-5. Emotional tone and sentiment intensity.
-6. Advanced detections: Micro-hesitations (sub-500ms pauses), Plosive clarity (/p/, /b/, /t/), and Environmental Signal-to-Noise quality.
+3. Biometric metrics (all as 0-100 scores): Pace (WPM as number), Confidence (0-100), Rhythm (0-100), Intonation (0-100), and Articulation (0-100).
+4. Physical vocal characteristics: Resonance (0-100), Breath management (0-100 score), and Vocal Health strain level (0-100).
+5. Emotional tone and sentiment intensity (sentiment as 0-1 decimal where 0=negative, 1=positive).
+6. Advanced detections: Micro-hesitations (count as number), Plosive clarity quality (0-100), and Environmental noise level (0-100).
 7. Accent Profile: Identify the primary regional/cultural accent and provide a clarity score (0-100) based on how easily a general audience would understand the speech.
-8. Stress & Confidence Profile: Based on vocal tremor patterns, pace variation, breath irregularity, and hesitation clustering, determine an overall stress level (0-100, where 0=calm and 100=extremely stressed). List the key nervousness indicators observed (e.g., "elevated pace", "shallow breathing", "frequent hesitations"). Identify the peak stress moment and provide coaching on managing anxiety in similar situations.`;
+8. Stress & Confidence Profile: Determine an overall stress level (0-100, where 0=calm and 100=extremely stressed). List the key nervousness indicators observed (e.g., "elevated pace", "shallow breathing", "frequent hesitations"). Identify the peak stress moment and provide coaching on managing anxiety in similar situations.
+
+IMPORTANT: All percentage-based metrics MUST be returned as numbers between 0 and 100 (e.g., 85 for 85%), except sentimentScore which should be 0-1.`;
 
 const REQUIRED_FIELDS = [
   "transcription",

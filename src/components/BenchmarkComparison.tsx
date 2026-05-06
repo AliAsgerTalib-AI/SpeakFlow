@@ -21,20 +21,38 @@ interface BenchmarkComparisonProps {
   mode: 'general' | 'interview' | 'presentation' | 'sales';
 }
 
+// Normalize scores to 0-100 range (handles both 0-100 and 0-1 formats)
+const normalizeScore = (score: number | undefined): number => {
+  if (!score) return 0;
+  if (score <= 1) return score * 100; // Convert 0-1 to 0-100
+  return score; // Already in 0-100 range
+};
+
 export const BenchmarkComparison: React.FC<BenchmarkComparisonProps> = ({
   feedback,
   mode,
 }) => {
   const benchmark = MODE_BENCHMARKS[mode];
+
+  // Normalize all scores before calculations
+  const normalizedConfidence = normalizeScore(feedback.confidenceScore);
+  const normalizedRhythm = normalizeScore(feedback.rhythmScore);
+  const normalizedIntonation = normalizeScore(feedback.intonationScore);
+  const normalizedBreath = normalizeScore(feedback.breathManagement?.score);
+  const normalizedArticulation = normalizeScore(feedback.articulationScore);
+  const normalizedVocalHealth = normalizeScore(100 - (feedback.vocalHealth?.strainLevel || 0));
+  const normalizedSentiment = normalizeScore((feedback.sentimentScore || 0) < 1 ? (feedback.sentimentScore || 0) * 100 : feedback.sentimentScore);
+  const normalizedResonance = normalizeScore(feedback.vocalResonance?.score);
+
   const overallScore =
-    (feedback.confidenceScore +
-      feedback.rhythmScore +
-      feedback.intonationScore +
-      feedback.breathManagement.score +
-      feedback.articulationScore +
-      (100 - (feedback.vocalHealth?.strainLevel || 0)) +
-      Math.round((feedback.sentimentScore || 0) * 100) +
-      feedback.vocalResonance?.score) /
+    (normalizedConfidence +
+      normalizedRhythm +
+      normalizedIntonation +
+      normalizedBreath +
+      normalizedArticulation +
+      normalizedVocalHealth +
+      normalizedSentiment +
+      normalizedResonance) /
     8;
 
   const tier = getTierForScore(overallScore);
@@ -42,56 +60,56 @@ export const BenchmarkComparison: React.FC<BenchmarkComparisonProps> = ({
   const metrics = [
     {
       label: 'Confidence',
-      current: feedback.confidenceScore,
+      current: normalizedConfidence,
       benchmark: benchmark.confidence,
       icon: Target,
       color: 'text-primary',
     },
     {
       label: 'Rhythm',
-      current: feedback.rhythmScore,
+      current: normalizedRhythm,
       benchmark: benchmark.rhythm,
       icon: TrendingUp,
       color: 'text-blue-500',
     },
     {
       label: 'Intonation',
-      current: feedback.intonationScore,
+      current: normalizedIntonation,
       benchmark: benchmark.intonation,
       icon: Award,
       color: 'text-indigo-500',
     },
     {
       label: 'Breath Management',
-      current: feedback.breathManagement?.score,
+      current: normalizedBreath,
       benchmark: benchmark.breath,
       icon: ArrowUp,
       color: 'text-emerald-500',
     },
     {
       label: 'Articulation',
-      current: feedback.articulationScore,
+      current: normalizedArticulation,
       benchmark: benchmark.articulation,
       icon: Target,
       color: 'text-amber-500',
     },
     {
       label: 'Vocal Health',
-      current: 100 - (feedback.vocalHealth?.strainLevel || 0),
+      current: normalizedVocalHealth,
       benchmark: benchmark.health,
       icon: CheckCircle2,
       color: 'text-rose-500',
     },
     {
       label: 'Sentiment',
-      current: Math.round((feedback.sentimentScore || 0) * 100),
+      current: normalizedSentiment,
       benchmark: benchmark.sentiment,
       icon: Award,
       color: 'text-orange-500',
     },
     {
       label: 'Resonance',
-      current: feedback.vocalResonance?.score,
+      current: normalizedResonance,
       benchmark: benchmark.resonance,
       icon: Target,
       color: 'text-purple-500',
