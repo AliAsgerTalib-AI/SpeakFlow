@@ -26,6 +26,7 @@ export const PracticeSession: React.FC = () => {
   const [feedback, setFeedback] = useState<SpeechFeedback | null>(null);
   const [realTimeTranscript, setRealTimeTranscript] = useState<string>("");
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+  const [speechRecognitionStatus, setSpeechRecognitionStatus] = useState<string>("Checking support...");
 
   // Prevent double-fire of analysis
   const analysisTriggeredRef = useRef(false);
@@ -39,15 +40,23 @@ export const PracticeSession: React.FC = () => {
 
   useEffect(() => {
     if (!isSpeechRecognitionSupported()) {
+      setSpeechRecognitionStatus('❌ Not supported');
       console.warn('Speech Recognition is not supported in this browser. Live transcription will not be available.');
       return;
     }
+
+    setSpeechRecognitionStatus('✓ Supported');
 
     const recognitionInstance = getSpeechRecognition();
     if (recognitionInstance) {
       recognitionInstance.continuous = true;
       recognitionInstance.interimResults = true;
       recognitionInstance.lang = 'en-US';
+
+      recognitionInstance.onstart = () => {
+        setSpeechRecognitionStatus('🎙️ Listening...');
+        console.log('Speech recognition started');
+      };
 
       recognitionInstance.onresult = (event) => {
         let interimTranscript = '';
@@ -60,11 +69,18 @@ export const PracticeSession: React.FC = () => {
             interimTranscript += event.results[i][0].transcript;
           }
         }
+        setSpeechRecognitionStatus('📝 Transcribing...');
         setRealTimeTranscript(finalTranscript + interimTranscript);
       };
 
       recognitionInstance.onerror = (event) => {
+        setSpeechRecognitionStatus(`❌ Error: ${event.error}`);
         console.error('Speech recognition error:', event.error);
+      };
+
+      recognitionInstance.onend = () => {
+        setSpeechRecognitionStatus('⏸️ Stopped');
+        console.log('Speech recognition ended');
       };
 
       setRecognition(recognitionInstance);
@@ -314,6 +330,13 @@ export const PracticeSession: React.FC = () => {
           onStartRecording={handleStartRecording}
           onStopRecording={handleStopAndAnalyze}
         />
+
+        <Card className="p-4 bg-muted/20 border-2 border-border/50">
+          <div className="text-center text-sm">
+            <p className="font-mono text-xs text-muted-foreground mb-1">Speech Recognition Status</p>
+            <p className="text-base font-semibold text-foreground">{speechRecognitionStatus}</p>
+          </div>
+        </Card>
 
         <LiveFeedbackBar
           isRecording={isRecording}
