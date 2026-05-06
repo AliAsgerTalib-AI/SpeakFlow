@@ -32,6 +32,8 @@ export const PracticeSession: React.FC = () => {
   const analysisTriggeredRef = useRef(false);
   // Track if we should keep recognition running
   const keepRecognitionRunningRef = useRef(false);
+  // Track last restart time to prevent loop
+  const lastRestartTimeRef = useRef(0);
 
   // Show toast notification for recorder errors
   React.useEffect(() => {
@@ -80,17 +82,39 @@ export const PracticeSession: React.FC = () => {
         console.error('Speech recognition error:', event.error);
       };
 
+      recognitionInstance.onabort = () => {
+        setSpeechRecognitionStatus('⚠️ Aborted');
+        console.log('Speech recognition aborted');
+        if (keepRecognitionRunningRef.current) {
+          setTimeout(() => {
+            try {
+              recognitionInstance.start();
+            } catch (err) {
+              console.error('Failed to restart after abort:', err);
+            }
+          }, 500);
+        }
+      };
+
       recognitionInstance.onend = () => {
         setSpeechRecognitionStatus('⏸️ Stopped');
         console.log('Speech recognition ended');
 
         // Restart if we're still recording (work around mobile API issues)
         if (keepRecognitionRunningRef.current) {
-          console.log('Restarting speech recognition...');
-          try {
-            recognitionInstance.start();
-          } catch (err) {
-            console.error('Failed to restart recognition:', err);
+          const now = Date.now();
+          const timeSinceLastRestart = now - lastRestartTimeRef.current;
+
+          // Only restart if at least 500ms have passed since last restart (prevent rapid restart loop)
+          if (timeSinceLastRestart > 500) {
+            console.log('Restarting speech recognition after silence...');
+            lastRestartTimeRef.current = now;
+            try {
+              recognitionInstance.start();
+            } catch (err) {
+              console.error('Failed to restart recognition:', err);
+              setSpeechRecognitionStatus(`❌ Restart failed: ${err}`);
+            }
           }
         }
       };
@@ -148,6 +172,7 @@ export const PracticeSession: React.FC = () => {
     resetRecording();
     analysisTriggeredRef.current = false;
     keepRecognitionRunningRef.current = true;
+    lastRestartTimeRef.current = Date.now();
     startRecording();
     if (recognition) {
       try {
