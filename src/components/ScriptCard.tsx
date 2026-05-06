@@ -50,7 +50,7 @@ export const ScriptCard: React.FC<ScriptCardProps> = ({
       return;
     }
 
-    const cleanScript = script.replace(/[*_#](/g, '');
+    const cleanScript = script.replace(/[*_#]/g, '');
     const scriptWords = cleanScript.split(/\s+/).filter(w => w.length > 0);
     const transcriptWords = realTimeTranscript
       .toLowerCase()
