@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +23,67 @@ interface FeedbackResultsProps {
   userProfile?: UserProfile | null;
   onSetBaseline?: (feedback: SpeechFeedback) => void;
 }
+
+const METRIC_TOOLTIPS: Record<string, { label: string; description: string }> = {
+  Confidence: {
+    label: 'Confidence',
+    description: 'How assured and self-assured your delivery sounds. Higher scores indicate steady vocal control and authoritative presence.',
+  },
+  Rhythm: {
+    label: 'Rhythm',
+    description: 'The natural flow and cadence of your speech. Good rhythm keeps listeners engaged; poor rhythm creates fatigue.',
+  },
+  Intonation: {
+    label: 'Intonation',
+    description: 'The melody and pitch variation in your voice. Varied intonation maintains interest; flat delivery loses audience attention.',
+  },
+  Breath: {
+    label: 'Breath Management',
+    description: 'Your ability to control breathing for sustained phrases and pauses. Strong breath support prevents voice strain.',
+  },
+  Articulation: {
+    label: 'Articulation',
+    description: 'Clarity of consonants and vowels. Sharp articulation ensures words are understood; mumbling reduces comprehension.',
+  },
+  Health: {
+    label: 'Vocal Health',
+    description: 'Freedom from strain indicators (fry, hoarseness, tension). Higher scores mean less vocal fatigue and healthier production.',
+  },
+  Sentiment: {
+    label: 'Sentiment',
+    description: 'Emotional tone and positivity detected in your voice. Ranges from negative to positive; affects listener perception.',
+  },
+  Resonance: {
+    label: 'Resonance',
+    description: 'Richness and power of your voice tone. Good resonance sounds warm and professional; poor resonance sounds thin or weak.',
+  },
+};
+
+const MetricTooltip: React.FC<{ metric: string; children: React.ReactNode }> = ({ metric, children }) => {
+  const [show, setShow] = useState(false);
+  const info = METRIC_TOOLTIPS[metric];
+
+  return (
+    <div className="relative group">
+      {children}
+      {info && (
+        <div
+          className={`
+            absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50
+            bg-card border border-border rounded-lg shadow-xl
+            px-3 py-2 w-56 text-xs leading-relaxed text-muted-foreground
+            opacity-0 scale-95 origin-bottom pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto
+            transition-all duration-150
+          `}
+        >
+          <p className="font-semibold text-foreground mb-1">{info.label}</p>
+          <p>{info.description}</p>
+          <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-card border-t border-l border-border rotate-45 -mt-1" />
+        </div>
+      )}
+    </div>
+  );
+};
 
 const PaceGauge: React.FC<{ wpm: number }> = ({ wpm }) => {
   const normalizedPace = Math.min(Math.max(((wpm - 80) / 120) * 100, 0), 100);
@@ -176,7 +237,7 @@ export const FeedbackResults: React.FC<FeedbackResultsProps> = ({ feedback, scri
             );
           })()}
 
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-2 md:gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-3 md:gap-4">
             {[
               { label: 'Confidence', val: feedback.confidenceScore, icon: Target, color: 'text-primary' },
               { label: 'Rhythm', val: feedback.rhythmScore, icon: Music, color: 'text-blue-500' },
@@ -187,23 +248,25 @@ export const FeedbackResults: React.FC<FeedbackResultsProps> = ({ feedback, scri
               { label: 'Sentiment', val: Math.round((feedback.sentimentScore || 0) * 100), icon: Smile, color: 'text-orange-500' },
               { label: 'Resonance', val: feedback.vocalResonance?.score, icon: Target, color: 'text-purple-500' },
             ].map((stat, i) => (
-              <div key={i} className="p-2 md:p-3 bg-card/50 rounded-lg md:rounded-xl border border-border/50 shadow-sm space-y-1.5 md:space-y-2">
-                <div className="flex justify-between items-start">
-                  <p className="text-[8px] md:text-[9px] uppercase font-mono text-muted-foreground tracking-widest">
-                    {stat.label}
-                  </p>
-                  <stat.icon className={`h-2.5 w-2.5 md:h-3 md:w-3 ${stat.color}`} />
+              <MetricTooltip key={i} metric={stat.label}>
+                <div className="p-4 bg-card/50 rounded-xl border border-border/50 shadow-sm space-y-2.5 cursor-help hover:border-primary/30 transition-colors">
+                  <div className="flex justify-between items-start">
+                    <p className="text-xs md:text-sm uppercase font-mono text-muted-foreground tracking-widest font-semibold">
+                      {stat.label}
+                    </p>
+                    <stat.icon className={`h-4 w-4 md:h-5 md:w-5 ${stat.color}`} />
+                  </div>
+                  <div className="flex items-end gap-1.5">
+                    <span className="text-2xl md:text-3xl font-bold tracking-tighter">{Math.round(stat.val || 0)}</span>
+                    <span className="text-muted-foreground mb-1 font-mono text-xs md:text-sm">%</span>
+                  </div>
+                  <Progress
+                    value={Math.round(stat.val || 0)}
+                    className="h-2 bg-muted"
+                    aria-label={`${stat.label} score: ${Math.round(stat.val || 0)}%`}
+                  />
                 </div>
-                <div className="flex items-end gap-1">
-                  <span className="text-base md:text-xl font-bold tracking-tighter">{Math.round(stat.val || 0)}</span>
-                  <span className="text-muted-foreground mb-0.5 font-mono text-[8px] md:text-[9px]">%</span>
-                </div>
-                <Progress
-                  value={Math.round(stat.val || 0)}
-                  className="h-1 bg-muted"
-                  aria-label={`${stat.label} score: ${Math.round(stat.val || 0)}%`}
-                />
-              </div>
+              </MetricTooltip>
             ))}
           </div>
 

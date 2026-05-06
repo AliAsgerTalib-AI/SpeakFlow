@@ -20,11 +20,15 @@
 
 - **Scripted Practice Mode** — Read aloud from an AI-generated script and get word-level pronunciation feedback with real-time highlighting as you speak
 - **Free Speech Lab** — Record up to 60 seconds of unscripted speech and receive a full diagnostic report
-- **21-Metric AI Analysis** — Confidence, pace (WPM), rhythm, intonation, articulation, vocal resonance, breath management, vocal health (strain / glottal fry), sentiment, filler words, micro-hesitations, plosive clarity, environmental noise, and accent profile
+- **27-Metric AI Analysis** — Confidence, pace (WPM), rhythm, intonation, articulation, vocal resonance, breath management, vocal health (strain / glottal fry), sentiment, filler words, micro-hesitations, plosive clarity, environmental noise, stress profile, accent profile, and more
+- **Interactive Metric Tooltips** — Hover over any metric card to see detailed explanations of what it measures and why it matters
 - **Real-Time Transcription** — Live Web Speech API transcript displayed alongside your script during recording
+- **Script Annotator** — Upload or paste speech scripts and receive AI-generated delivery instructions (pause, stress, breath, tempo, tone, eye contact) with color-coded inline badges
+- **PDF Export** — Download annotated scripts and analysis reports as professionally formatted PDFs
 - **Session Dashboard** — Confidence trend and pace volatility charts across all saved sessions, persisted in localStorage
+- **Benchmark Comparison** — Compare your performance against professional coaching standards by mode (general, interview, presentation, sales)
 - **Glossary** — Plain-language explanations of every metric, with clinical benchmarks
-- **Session Export** — Download any session as a structured JSON file
+- **Session Export** — Download any session as a structured JSON file or plain text
 
 ---
 
@@ -83,13 +87,17 @@ npm run lint     # TypeScript type-check (tsc --noEmit)
 ```
 speakflow/
 ├── src/
-│   ├── App.tsx                    # Root: sticky header + 4-tab router (Motion animations)
-│   ├── types.ts                   # SpeechFeedback, SessionLog, UserStats interfaces
+│   ├── App.tsx                    # Root: sticky header + 6-tab router (Motion animations)
+│   ├── types.ts                   # SpeechFeedback, SessionLog, ScriptAnnotation interfaces
 │   ├── components/
-│   │   ├── PracticeSession.tsx    # Scripted mode — record, highlight, analyze (~771 lines)
-│   │   ├── FreeSpeechSession.tsx  # Unscripted mode — 60s free recording (~402 lines)
+│   │   ├── PracticeSession.tsx    # Scripted mode — record, highlight, analyze
+│   │   ├── FreeSpeechSession.tsx  # Unscripted mode — 60s free recording
+│   │   ├── ScriptAnnotator.tsx    # Script markup with delivery instructions
 │   │   ├── Dashboard.tsx          # Recharts session history charts
+│   │   ├── FeedbackResults.tsx    # Enhanced metrics display with tooltips
+│   │   ├── BenchmarkComparison.tsx # Performance vs professional standards
 │   │   ├── Glossary.tsx           # Metric reference cards
+│   │   ├── VocalProfileSetup.tsx  # User vocal goals & demographics
 │   │   └── AudioVisualizer.tsx    # Animated waveform bars
 │   ├── hooks/
 │   │   ├── useRecorder.ts         # MediaRecorder → base64 audio
@@ -110,19 +118,19 @@ speakflow/
 
 **Data Flow:**
 ```
-useRecorder (MediaRecorder)
+useRecorder (MediaRecorder) | File upload
   ↓
-base64 audio + optional script text
+base64 audio / script text
   ↓
-gemini.ts: analyzeSpeech() 
+gemini.ts: analyzeSpeech() | annotateScript()
   ↓
-SpeechFeedback JSON (27 metrics)
+SpeechFeedback (27 metrics) | ScriptAnnotation (segments + tips)
   ↓
-Session components render feedback
+Session components render feedback | Annotator renders inline badges
   ↓
-localStorage ('speakflow_sessions')
+localStorage ('speakflow_sessions') | PDF export
   ↓
-Dashboard visualizations
+Dashboard visualizations | Session history
 ```
 
 ---
@@ -168,6 +176,21 @@ Dashboard visualizations
 
 ## Development Tips
 
+### Recent Enhancements (v1.5+)
+
+**Metric Display Improvements:**
+- Metrics grid now displays larger font sizes for improved readability (2xl–3xl for scores)
+- Hover tooltips explain each metric's meaning and importance (implementation in `FeedbackResults.tsx`)
+- Removed duplicate metrics display from BenchmarkComparison card
+- Updated card padding and spacing for better visual hierarchy
+
+**Script Annotation Features:**
+- 8 instruction types: PAUSE, STRESS, BREATH, LOOK_AROUND, SLOW_DOWN, SPEED_UP, LOWER_VOICE, PROJECT_VOICE
+- Color-coded inline badges with CSS tooltips showing coaching notes on hover
+- Copy as plain text with `[INSTRUCTION: detail]` format
+- Export as PDF with automatic page breaks and formatting
+- File upload support for `.txt` scripts
+
 ### Running the Dev Server
 ```bash
 npm run dev
@@ -175,6 +198,7 @@ npm run dev
 - Runs on `http://localhost:3000` with HMR (hot module replacement)
 - Changes to components hot-reload instantly
 - Changes to environment variables require a full restart
+- Try the Script Annotator tab with a 3–5 sentence speech sample
 
 ### Type Checking
 ```bash
@@ -215,17 +239,31 @@ const feedback = await analyzeSpeech(
 // Returns SpeechFeedback object with 27 metrics
 ```
 
-#### `generatePracticeScript(topic, level)`
+#### `generatePracticeScript(topic, mode)`
 Generates new practice scripts for training.
 
 ```typescript
 import { generatePracticeScript } from '@/lib/gemini';
 
-const script = await generatePracticeScript(
-  'business-presentation',  // Topic
-  'intermediate'            // Level: beginner | intermediate | advanced
+const { script, prompt } = await generatePracticeScript(
+  'leadership',                      // Topic
+  'interview'                        // Mode: general | interview | presentation | sales
 );
-// Returns { title, text, estimatedDuration }
+// Returns { script: string, prompt: string }
+```
+
+#### `annotateScript(scriptText)`
+Analyzes a script and inserts AI delivery instructions.
+
+```typescript
+import { annotateScript } from '@/lib/gemini';
+
+const result = await annotateScript('Your speech text here...');
+if (result.success) {
+  const { segments, estimatedDuration, overallTips } = result.data;
+  // Segments array alternates between { type: 'text', content: '...' }
+  // and { type: 'instruction', instruction: 'PAUSE' | 'STRESS' | 'BREATH' | ..., detail: 'coaching note' }
+}
 ```
 
 ### Key Types
@@ -233,11 +271,13 @@ const script = await generatePracticeScript(
 **`SpeechFeedback`** — Main analysis result (27 fields)
 ```typescript
 interface SpeechFeedback {
-  overallScore: number;
-  confidence: number;
-  pace: number;               // Words per minute
-  articulation: number;       // 0-100
-  // ... 23 more fields (see types.ts for full definition)
+  confidenceScore: number;
+  rhythmScore: number;
+  intonationScore: number;
+  articulationScore: number;
+  breathManagement: { score: number; feedback: string };
+  vocalHealth: { strainLevel: number; fryPresence: boolean; feedback: string };
+  // ... 20+ more fields (see types.ts for full definition)
 }
 ```
 
@@ -245,11 +285,23 @@ interface SpeechFeedback {
 ```typescript
 interface SessionLog {
   id: string;
+  userId: string;
   timestamp: number;
-  mode: 'practice' | 'free-speech';
+  script: string;
+  audioUrl?: string;
   feedback: SpeechFeedback;
-  audioBlob?: Blob;
-  scriptUsed?: string;
+}
+```
+
+**`ScriptAnnotation`** — Annotated script with delivery instructions
+```typescript
+interface ScriptAnnotation {
+  segments: (
+    | { type: 'text'; content: string }
+    | { type: 'instruction'; instruction: 'PAUSE' | 'STRESS' | 'BREATH' | 'LOOK_AROUND' | 'SLOW_DOWN' | 'SPEED_UP' | 'LOWER_VOICE' | 'PROJECT_VOICE'; detail: string }
+  )[];
+  estimatedDuration: string;  // e.g., "2 minutes 15 seconds"
+  overallTips: string;
 }
 ```
 
@@ -303,22 +355,30 @@ interface SessionLog {
 
 ## Roadmap
 
+### ✅ Completed (v1.5)
+- [x] **Script Annotator** — AI-powered delivery instruction markup with color-coded badges
+- [x] **PDF Export** — Download annotated scripts and analysis as formatted PDFs
+- [x] **Enhanced Metrics UI** — Larger fonts, interactive tooltips explaining each metric
+- [x] **Benchmark Comparison** — Mode-specific performance standards (interview, presentation, sales, etc.)
+- [x] **Vocal Profile Setup** — Customize analysis based on vocal goals & demographics
+
 ### Phase 1: Security & Backend (Q2-Q3 2026)
 - [ ] **Server-side Gemini proxy** — Hide API key from client bundle
 - [ ] **Firebase Firestore integration** — Cloud sync for cross-device session history
 - [ ] **User authentication** — Sign in with Google/Email for personal profiles
+- [ ] **Advanced metrics dashboard** — Multi-week trend analysis and improvement tracking
 
 ### Phase 2: Advanced Features (Q3-Q4 2026)
-- [ ] **Word-level feedback** — Highlight mispronounced words with corrections
-- [ ] **Custom script input** — Users upload or paste their own text for practice
+- [ ] **Voice cloning** — Use speaker's voice for script playback and comparison
 - [ ] **Accent-specific coaching** — Detect user's native accent and provide targeted tips
 - [ ] **Session sharing** — Generate shareable report links with metrics
+- [ ] **Custom exercise library** — Save and organize personalized drills
 
 ### Phase 3: Mobile & Expansion (2027)
 - [ ] **React Native / Capacitor mobile app** — iOS and Android versions
 - [ ] **Offline mode** — Record and analyze without internet (using local models)
-- [ ] **Advanced metrics** — Vocal health metrics, emotional sentiment analysis
 - [ ] **Community leaderboards** — Compare scores, friendly challenges
+- [ ] **Team coaching dashboard** — Managers track multiple speakers' progress
 
 ---
 

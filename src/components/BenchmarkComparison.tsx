@@ -191,16 +191,16 @@ export const BenchmarkComparison: React.FC<BenchmarkComparisonProps> = ({
         </CardContent>
       </Card>
 
-      {/* Percentage-based Metrics */}
+      {/* Benchmark Comparison Summary */}
       <Card>
         <CardHeader className="border-b">
-          <CardTitle className="text-sm">Performance vs Professional Benchmark</CardTitle>
+          <CardTitle className="text-sm">Benchmark Comparison Summary</CardTitle>
           <CardDescription className="text-xs">
-            Professional coaches typically score {Math.round(benchmark.confidence)}%+ in most areas
+            Your scores vs professional coaching standards by mode
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-6">
-          <div className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {metrics.map((metric, i) => {
               const gap = calculateGap(metric.current, metric.benchmark);
               const isAbove = isAboveBenchmark(metric.current, metric.benchmark);
@@ -211,47 +211,26 @@ export const BenchmarkComparison: React.FC<BenchmarkComparisonProps> = ({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className="space-y-2"
+                  className={`p-3 rounded-lg border text-center ${isAbove ? 'bg-emerald-500/5 border-emerald-500/20' : gap > 10 ? 'bg-red-500/5 border-red-500/20' : 'bg-amber-500/5 border-amber-500/20'}`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <metric.icon className={`h-3.5 w-3.5 ${metric.color}`} />
-                      <span className="text-sm font-medium">{metric.label}</span>
-                    </div>
-                    <div className="flex gap-2 items-center">
-                      <div className="text-right">
-                        <div className="flex gap-1 items-baseline">
-                          <span className="text-sm font-bold">{Math.round(metric.current)}</span>
-                          <span className="text-[10px] text-muted-foreground">%</span>
-                        </div>
-                        <div className="text-[10px] text-muted-foreground">
-                          Pro: {Math.round(metric.benchmark)}%
-                        </div>
-                      </div>
-                      {isAbove ? (
-                        <Badge variant="outline" className="text-emerald-600 border-emerald-200/50 bg-emerald-500/5">
-                          +{Math.round(gap)}
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="outline"
-                          className={`${gap > 10 ? 'text-red-600 border-red-200/50 bg-red-500/5' : 'text-amber-600 border-amber-200/50 bg-amber-500/5'}`}
-                        >
-                          {Math.round(gap)}
-                        </Badge>
-                      )}
-                    </div>
+                  <p className="text-[10px] uppercase font-mono text-muted-foreground mb-1.5 tracking-wider">{metric.label}</p>
+                  <div className="flex items-baseline justify-center gap-1 mb-2">
+                    <span className="text-lg font-bold">{Math.round(metric.current)}</span>
+                    <span className="text-[10px] text-muted-foreground">%</span>
                   </div>
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <Progress value={Math.min(metric.current, 100)} className="h-1.5" />
-                      <div className="text-[10px] text-muted-foreground mt-1">Your score</div>
-                    </div>
-                    <div className="flex-1">
-                      <Progress value={metric.benchmark} className="h-1.5 opacity-40" />
-                      <div className="text-[10px] text-muted-foreground mt-1">Professional</div>
-                    </div>
-                  </div>
+                  {isAbove ? (
+                    <Badge variant="outline" className="w-full justify-center text-[9px] text-emerald-600 border-emerald-200/50 bg-emerald-500/5">
+                      +{Math.round(gap)}
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className={`w-full justify-center text-[9px] ${gap > 10 ? 'text-red-600 border-red-200/50 bg-red-500/5' : 'text-amber-600 border-amber-200/50 bg-amber-500/5'}`}
+                    >
+                      -{Math.round(gap)}
+                    </Badge>
+                  )}
+                  <p className="text-[8px] text-muted-foreground mt-2">Pro: {Math.round(metric.benchmark)}%</p>
                 </motion.div>
               );
             })}

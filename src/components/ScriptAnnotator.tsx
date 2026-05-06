@@ -15,8 +15,10 @@ import {
   Wand2,
   Clock,
   Lightbulb,
+  FileJson,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { jsPDF } from 'jspdf';
 import { annotateScript } from '@/src/lib/gemini';
 import { ScriptAnnotation, AnnotationSegment, AnnotationInstructionType } from '@/src/types';
 
@@ -249,6 +251,83 @@ export const ScriptAnnotator: React.FC = () => {
     }
   };
 
+  const handleExportPDF = () => {
+    if (!annotation) return;
+    const pdf = new jsPDF();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const margin = 15;
+    const contentWidth = pageWidth - margin * 2;
+    let yPosition = margin;
+
+    // Title
+    pdf.setFontSize(18);
+    pdf.setTextColor(40);
+    pdf.text('Annotated Script', margin, yPosition);
+    yPosition += 12;
+
+    // Metadata
+    pdf.setFontSize(10);
+    pdf.setTextColor(100);
+    pdf.text(`Duration: ${annotation.estimatedDuration}`, margin, yPosition);
+    yPosition += 8;
+    pdf.text(`Generated: ${new Date().toLocaleDateString()}`, margin, yPosition);
+    yPosition += 12;
+
+    // Separator
+    pdf.setDrawColor(200);
+    pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+    yPosition += 8;
+
+    // Overall Tips
+    pdf.setFontSize(11);
+    pdf.setTextColor(40);
+    pdf.text('Delivery Tips:', margin, yPosition);
+    yPosition += 6;
+    pdf.setFontSize(9);
+    pdf.setTextColor(80);
+    const tipsLines = pdf.splitTextToSize(annotation.overallTips, contentWidth);
+    tipsLines.forEach((line: string) => {
+      if (yPosition > pageHeight - margin) {
+        pdf.addPage();
+        yPosition = margin;
+      }
+      pdf.text(line, margin, yPosition);
+      yPosition += 5;
+    });
+    yPosition += 6;
+
+    // Script
+    pdf.setFontSize(11);
+    pdf.setTextColor(40);
+    pdf.text('Script with Instructions:', margin, yPosition);
+    yPosition += 8;
+
+    pdf.setFontSize(9);
+    pdf.setTextColor(0);
+    annotation.segments.forEach((seg) => {
+      let text: string;
+      if (seg.type === 'text') {
+        text = seg.content;
+      } else {
+        text = `[${seg.instruction}: ${seg.detail}]`;
+      }
+
+      const lines = pdf.splitTextToSize(text, contentWidth);
+      lines.forEach((line: string) => {
+        if (yPosition > pageHeight - margin) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+        pdf.text(line, margin, yPosition);
+        yPosition += 5;
+      });
+    });
+
+    pdf.save('annotated-script.pdf');
+    toast.success('PDF downloaded.');
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-20 md:pb-10 px-4 md:px-0">
       {/* Page header */}
@@ -426,7 +505,15 @@ export const ScriptAnnotator: React.FC = () => {
                     className="h-8 text-xs rounded-full gap-1.5"
                     onClick={handleDownload}
                   >
-                    <Download className="h-3.5 w-3.5" /> Download
+                    <Download className="h-3.5 w-3.5" /> Download .txt
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs rounded-full gap-1.5"
+                    onClick={handleExportPDF}
+                  >
+                    <FileJson className="h-3.5 w-3.5" /> Export PDF
                   </Button>
                 </div>
 
@@ -444,7 +531,7 @@ export const ScriptAnnotator: React.FC = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <ScrollArea className="max-h-[600px]">
+                    <ScrollArea className="h-[750px]">
                       <div className="p-5">
                         <AnnotatedScriptRenderer segments={annotation.segments} />
                       </div>
