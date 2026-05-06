@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRecorder } from '@/src/hooks/useRecorder';
 import { useSessionPersistence } from '@/src/hooks/useSessionPersistence';
 import { analyzeSpeech, generatePracticeScript } from '@/src/lib/gemini';
-import { getSpeechRecognition, isSpeechRecognitionSupported } from '@/src/hooks/useSpeechRecognition';
 import { parseScript } from '@/src/lib/scriptParser';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,15 +24,9 @@ export const PracticeSession: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [feedback, setFeedback] = useState<SpeechFeedback | null>(null);
   const [realTimeTranscript, setRealTimeTranscript] = useState<string>("");
-  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
-  const [speechRecognitionStatus, setSpeechRecognitionStatus] = useState<string>("Checking support...");
 
   // Prevent double-fire of analysis
   const analysisTriggeredRef = useRef(false);
-  // Track if we should keep recognition running
-  const keepRecognitionRunningRef = useRef(false);
-  // Track last restart time to prevent loop
-  const lastRestartTimeRef = useRef(0);
 
   // Show toast notification for recorder errors
   React.useEffect(() => {
@@ -42,86 +35,6 @@ export const PracticeSession: React.FC = () => {
     }
   }, [recorderError]);
 
-  useEffect(() => {
-    if (!isSpeechRecognitionSupported()) {
-      setSpeechRecognitionStatus('❌ Not supported');
-      console.warn('Speech Recognition is not supported in this browser. Live transcription will not be available.');
-      return;
-    }
-
-    setSpeechRecognitionStatus('✓ Supported');
-
-    const recognitionInstance = getSpeechRecognition();
-    if (recognitionInstance) {
-      recognitionInstance.continuous = true;
-      recognitionInstance.interimResults = true;
-      recognitionInstance.lang = 'en-US';
-
-      recognitionInstance.onstart = () => {
-        setSpeechRecognitionStatus('🎙️ Listening...');
-        console.log('Speech recognition started');
-      };
-
-      recognitionInstance.onresult = (event) => {
-        let interimTranscript = '';
-        let finalTranscript = '';
-
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
-          } else {
-            interimTranscript += event.results[i][0].transcript;
-          }
-        }
-        setSpeechRecognitionStatus('📝 Transcribing...');
-        setRealTimeTranscript(finalTranscript + interimTranscript);
-      };
-
-      recognitionInstance.onerror = (event) => {
-        setSpeechRecognitionStatus(`❌ Error: ${event.error}`);
-        console.error('Speech recognition error:', event.error);
-      };
-
-      recognitionInstance.onabort = () => {
-        setSpeechRecognitionStatus('⚠️ Aborted');
-        console.log('Speech recognition aborted');
-        if (keepRecognitionRunningRef.current) {
-          setTimeout(() => {
-            try {
-              recognitionInstance.start();
-            } catch (err) {
-              console.error('Failed to restart after abort:', err);
-            }
-          }, 500);
-        }
-      };
-
-      recognitionInstance.onend = () => {
-        setSpeechRecognitionStatus('⏸️ Stopped');
-        console.log('Speech recognition ended');
-
-        // Restart if we're still recording (work around mobile API issues)
-        if (keepRecognitionRunningRef.current) {
-          const now = Date.now();
-          const timeSinceLastRestart = now - lastRestartTimeRef.current;
-
-          // Only restart if at least 500ms have passed since last restart (prevent rapid restart loop)
-          if (timeSinceLastRestart > 500) {
-            console.log('Restarting speech recognition after silence...');
-            lastRestartTimeRef.current = now;
-            try {
-              recognitionInstance.start();
-            } catch (err) {
-              console.error('Failed to restart recognition:', err);
-              setSpeechRecognitionStatus(`❌ Restart failed: ${err}`);
-            }
-          }
-        }
-      };
-
-      setRecognition(recognitionInstance);
-    }
-  }, []);
 
   useEffect(() => {
     loadNewScript();
@@ -171,28 +84,11 @@ export const PracticeSession: React.FC = () => {
     setRealTimeTranscript("");
     resetRecording();
     analysisTriggeredRef.current = false;
-    keepRecognitionRunningRef.current = true;
-    lastRestartTimeRef.current = Date.now();
     startRecording();
-    if (recognition) {
-      try {
-        recognition.start();
-      } catch (err) {
-        console.error("Recognition start failed:", err);
-      }
-    }
   };
 
   const handleStopAndAnalyze = async () => {
-    keepRecognitionRunningRef.current = false;
     stopRecording();
-    if (recognition) {
-      try {
-        recognition.stop();
-      } catch (err) {
-        console.error("Recognition stop failed:", err);
-      }
-    }
   };
 
   const performAnalysis = async () => {
@@ -369,13 +265,6 @@ export const PracticeSession: React.FC = () => {
           onStartRecording={handleStartRecording}
           onStopRecording={handleStopAndAnalyze}
         />
-
-        <Card className="p-4 bg-muted/20 border-2 border-border/50">
-          <div className="text-center text-sm">
-            <p className="font-mono text-xs text-muted-foreground mb-1">Speech Recognition Status</p>
-            <p className="text-base font-semibold text-foreground">{speechRecognitionStatus}</p>
-          </div>
-        </Card>
 
         <LiveFeedbackBar
           isRecording={isRecording}
