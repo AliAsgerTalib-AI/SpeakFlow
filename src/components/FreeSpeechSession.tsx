@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -12,12 +12,16 @@ import {
 import { useRecorder } from '@/src/hooks/useRecorder';
 import { useSessionPersistence } from '@/src/hooks/useSessionPersistence';
 import { analyzeSpeech } from '@/src/lib/gemini';
+import { getSpeechRecognition, isSpeechRecognitionSupported } from '@/src/hooks/useSpeechRecognition';
 import { TranscriptWithFeedback } from './TranscriptWithFeedback';
+import { LiveFeedbackBar } from './LiveFeedbackBar';
 import { SpeechFeedback } from '@/src/types';
 import { toast } from 'sonner';
 
 export const FreeSpeechSession = () => {
-  const { isRecording, startRecording, stopRecording, audioBase64, resetRecording, recordingTime, mimeType } = useRecorder();
+  const { isRecording, startRecording, stopRecording, audioBase64, resetRecording, recordingTime, mimeType, error: recorderError } = useRecorder();
+  // Generate random bar heights once for the audio visualizer animation.
+  // These remain constant throughout the component's lifetime to create a consistent visual effect.
   const barHeights = useMemo(() => [...Array(12)].map(() => Math.random() * 40 + 10), []);
   const { saveSession, downloadSession } = useSessionPersistence();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -25,15 +29,29 @@ export const FreeSpeechSession = () => {
   const [realTimeTranscript, setRealTimeTranscript] = useState<string>("");
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
 
+  // Prevent double-fire of analysis
+  const analysisTriggeredRef = useRef(false);
+
+  // Show toast notification for recorder errors
   useEffect(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognitionInstance = new SpeechRecognition();
+    if (recorderError) {
+      toast.error(recorderError.message);
+    }
+  }, [recorderError]);
+
+  useEffect(() => {
+    if (!isSpeechRecognitionSupported()) {
+      console.warn('Speech Recognition is not supported in this browser. Live transcription will not be available.');
+      return;
+    }
+
+    const recognitionInstance = getSpeechRecognition();
+    if (recognitionInstance) {
       recognitionInstance.continuous = true;
       recognitionInstance.interimResults = true;
       recognitionInstance.lang = 'en-US';
 
-      recognitionInstance.onresult = (event: any) => {
+      recognitionInstance.onresult = (event) => {
         let interimTranscript = '';
         let finalTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
@@ -50,6 +68,7 @@ export const FreeSpeechSession = () => {
     setRealTimeTranscript("");
     setFeedback(null);
     resetRecording();
+    analysisTriggeredRef.current = false;
     startRecording();
     if (recognition) {
       try {
@@ -72,14 +91,34 @@ export const FreeSpeechSession = () => {
   };
 
   const performAnalysis = async () => {
-    if (!audioBase64) return;
+    if (!audioBase64 || analysisTriggeredRef.current) return;
+
+    analysisTriggeredRef.current = true;
     setIsAnalyzing(true);
     try {
       const result = await analyzeSpeech(audioBase64, mimeType, "Analyze this unscripted free speech session.");
-      setFeedback(result);
-      saveSession("Free Speech Session", result);
+      if (!result.success) {
+        const error = result.error;
+        console.error("Analysis error:", error.type, error.message);
+
+        let userMessage = "Analysis failed. Try recording again.";
+        if (error.isMissingFields()) {
+          userMessage = "Analysis incomplete: missing required metrics. Try recording again.";
+        } else if (error.isParseError()) {
+          userMessage = "Could not process API response. Please try again.";
+        } else if (error.isValidationError()) {
+          userMessage = "Invalid response from analysis service. Please try again.";
+        }
+
+        toast.error(userMessage);
+        return;
+      }
+
+      setFeedback(result.data);
+      saveSession("Free Speech Session", result.data);
     } catch (error) {
-      toast.error("Analysis failed. Try recording again.");
+      console.error("Unexpected error during analysis:", error);
+      toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -89,6 +128,13 @@ export const FreeSpeechSession = () => {
     if (!feedback) return;
     downloadSession('free-speech', feedback);
   };
+
+  // Trigger analysis once when recording stops and audio is ready
+  useEffect(() => {
+    if (!isRecording && audioBase64 && !feedback && !isAnalyzing) {
+      performAnalysis();
+    }
+  }, [isRecording, audioBase64]);
 
   const totalFillers = feedback?.fillerWordDetection.reduce((acc, curr) => acc + curr.count, 0) || 0;
 
@@ -102,10 +148,15 @@ export const FreeSpeechSession = () => {
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Free Speech Lab</h2>
           <p className="text-muted-foreground text-xs md:text-sm">Capture up to 60 seconds of natural flow analysis.</p>
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => { resetRecording(); setFeedback(null); setRealTimeTranscript(""); }} 
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            resetRecording();
+            setFeedback(null);
+            setRealTimeTranscript("");
+            analysisTriggeredRef.current = false;
+          }}
           className="rounded-full text-[10px] md:text-xs h-8 px-3 text-muted-foreground hover:text-foreground"
         >
           <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Start Over
@@ -153,7 +204,7 @@ export const FreeSpeechSession = () => {
               )}
 
               {isRecording && (
-                <motion.div 
+                <motion.div
                   key="recording"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -174,6 +225,11 @@ export const FreeSpeechSession = () => {
                       "{realTimeTranscript || 'Listening for your voice...'}"
                     </p>
                   </div>
+                  <LiveFeedbackBar
+                    isRecording={isRecording}
+                    realTimeTranscript={realTimeTranscript}
+                    recordingTime={recordingTime}
+                  />
                 </motion.div>
               )}
 

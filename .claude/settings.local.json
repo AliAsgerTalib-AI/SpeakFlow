@@ -4,7 +4,11 @@
       "Bash(npx playwright *)",
       "Bash(npm install *)",
       "Bash(npm run *)",
-      "Bash(curl -s http://localhost:3000)"
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(pkill -f \"npm run dev\")",
+      "PowerShell(Get-Process *)",
+      "Bash(Start-Sleep -Seconds 5)",
+      "Bash(curl -s http://localhost:5173)"
     ]
   }
 }

@@ -1,15 +1,15 @@
 export interface SpeechFeedback {
   transcription: string;
-  pronunciationFeedback: { word: string, suggestions: string }[];
-  paceAnalysis: { 
-    wpm: number; 
-    rating: "slow" | "good" | "fast"; 
-    feedback: string; 
+  pronunciationFeedback: { word: string; suggestions: string }[];
+  paceAnalysis: {
+    wpm: number;
+    rating: "slow" | "good" | "fast";
+    feedback: string;
   };
-  fillerWordDetection: { word: string, count: number }[];
+  fillerWordDetection: { word: string; count: number }[];
   confidenceScore: number;
   generalAdvice: string[];
-  clinicalInsights?: string;
+  clinicalInsights: string;
   rhythmScore: number;
   rhythmFeedback: string;
   intonationScore: number;
@@ -34,20 +34,21 @@ export interface SpeechFeedback {
     score: number;
     feedback: string;
   };
-  microHesitations?: number;
-  plosiveAnalysis?: {
+  microHesitations: number;
+  plosiveAnalysis: {
     quality: number;
     feedback: string;
   };
-  environmentalNoise?: {
+  environmentalNoise: {
     level: number;
     feedback: string;
   };
-  accentProfile?: {
+  accentProfile: {
     detectedAccent: string;
     clarityScore: number;
     feedback: string;
   };
+  stressProfile: StressProfile;
 }
 
 export interface SessionLog {
@@ -64,4 +65,19 @@ export interface UserStats {
   avgConfidence: number;
   avgPace: number;
   fillerWordFrequency: Record<string, number>;
+}
+
+export interface Exercise {
+  title: string;
+  description: string;
+  steps: string[];
+  targetMetric: string;
+  difficulty: "beginner" | "intermediate" | "advanced";
+}
+
+export interface StressProfile {
+  stressLevel: number;
+  nervousnessIndicators: string[];
+  peakMoment: string;
+  overallAssessment: string;
 }

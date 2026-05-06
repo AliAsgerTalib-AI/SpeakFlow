@@ -3,9 +3,10 @@ import { Dashboard } from './components/Dashboard';
 import { PracticeSession } from './components/PracticeSession';
 import { FreeSpeechSession } from './components/FreeSpeechSession';
 import { Glossary } from './components/Glossary';
+import { PronunciationDictionary } from './components/PronunciationDictionary';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toaster } from '@/components/ui/sonner';
-import { Mic2, LayoutDashboard, ShieldCheck, MessageSquare, BookOpen } from 'lucide-react';
+import { Mic2, LayoutDashboard, ShieldCheck, MessageSquare, BookOpen, BookMarked } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
@@ -37,6 +38,9 @@ export default function App() {
                 <TabsTrigger value="dashboard" className="rounded-full px-4 h-9 gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary border-transparent">
                   <LayoutDashboard className="h-4 w-4" /> Dashboard
                 </TabsTrigger>
+                <TabsTrigger value="dictionary" className="rounded-full px-4 h-9 gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary border-transparent">
+                  <BookMarked className="h-4 w-4" /> Dictionary
+                </TabsTrigger>
                 <TabsTrigger value="glossary" className="rounded-full px-4 h-9 gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary border-transparent">
                   <BookOpen className="h-4 w-4" /> Glossary
                 </TabsTrigger>
@@ -62,6 +66,9 @@ export default function App() {
               <TabsTrigger value="dashboard" className="flex-1 rounded-none gap-2 data-[state=active]:border-b-2 data-[state=active]:border-primary transition-none">
                 <LayoutDashboard className="h-4 w-4" />
               </TabsTrigger>
+              <TabsTrigger value="dictionary" className="flex-1 rounded-none gap-2 data-[state=active]:border-b-2 data-[state=active]:border-primary transition-none">
+                <BookMarked className="h-4 w-4" />
+              </TabsTrigger>
               <TabsTrigger value="glossary" className="flex-1 rounded-none gap-2 data-[state=active]:border-b-2 data-[state=active]:border-primary transition-none">
                 <BookOpen className="h-4 w-4" />
               </TabsTrigger>
@@ -82,6 +89,7 @@ export default function App() {
             {activeTab === "practice" && <PracticeSession />}
             {activeTab === "free-speech" && <FreeSpeechSession />}
             {activeTab === "dashboard" && <Dashboard />}
+            {activeTab === "dictionary" && <PronunciationDictionary />}
             {activeTab === "glossary" && <Glossary />}
           </motion.div>
         </AnimatePresence>
@@ -112,7 +120,7 @@ export default function App() {
               <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
               <a href="#" className="hover:text-primary transition-colors">Support</a>
             </div>
-            <p>© 2026 SpeakFlow AI. Built with Gemini 3 Flash.</p>
+            <p>Copyright Ali Asger Talib 2026</p>
           </div>
         </div>
       </footer>
