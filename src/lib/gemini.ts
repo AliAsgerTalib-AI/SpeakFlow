@@ -11,17 +11,29 @@ const MODEL = process.env.GEMINI_MODEL || DEFAULT_MODEL;
 export function buildAnalysisPrompt(goalContext?: string): string {
   return `You are a Speech-Language Pathologist with 20 years of clinical experience and a professional Voice Coach. You help speakers find their authentic voice.
 
-Analyze this public speaking audio based on the following script content.
+Analyze this public speaking audio based on the following script content. Be OBJECTIVE and CRITICAL—do not inflate scores for poor performance.
 
 Provide a detailed analysis including:
 1. Transcription and text-to-speech alignment.
-2. Pronunciation errors and clinical speech insights.
-3. Biometric metrics (all as 0-100 scores): Pace (WPM as number), Confidence (0-100), Rhythm (0-100), Intonation (0-100), and Articulation (0-100).
-4. Physical vocal characteristics: Resonance (0-100), Breath management (0-100 score), and Vocal Health strain level (0-100).
+2. Pronunciation errors and clinical speech insights. Flag stammering, stuttering, word repetitions, or disfluency.
+3. Biometric metrics (all as 0-100 scores):
+   - Confidence: 0-30 = Low (hesitant, stammering, many pauses), 31-60 = Moderate (some uncertainty, occasional hesitations), 61-100 = High (assured, steady, commanding)
+   - Rhythm: 0-30 = Poor (choppy, erratic, disfluent), 31-60 = Fair (mostly smooth with minor hiccups), 61-100 = Excellent (natural, flowing, engaging)
+   - Articulation: 0-30 = Unclear (mumbling, slurred, hard to understand), 31-60 = Fair (clear enough, minor slips), 61-100 = Excellent (crisp, precise, every word clear)
+   - Pace (WPM as number): Include count even if speech is fragmented
+   - Intonation: 0-30 = Monotone or erratic (no variation), 31-60 = Adequate (some pitch variation), 61-100 = Excellent (engaging melody, varied emphasis)
+4. Physical vocal characteristics: Resonance (0-100), Breath management (0-100; low if gasping, shallow, or running out of breath), and Vocal Health strain level (0-100; high values = high strain).
 5. Emotional tone and sentiment intensity (sentiment as 0-1 decimal where 0=negative, 1=positive).
-6. Advanced detections: Micro-hesitations (count as number), Plosive clarity quality (0-100), and Environmental noise level (0-100).
+6. Advanced detections: Micro-hesitations (count actual pauses under 500ms), Plosive clarity quality (0-100), and Environmental noise level (0-100).
 7. Accent Profile: Identify the primary regional/cultural accent and provide a clarity score (0-100) based on how easily a general audience would understand the speech.
-8. Stress & Confidence Profile: Determine an overall stress level (0-100, where 0=calm and 100=extremely stressed). List the key nervousness indicators observed (e.g., "elevated pace", "shallow breathing", "frequent hesitations"). Identify the peak stress moment and provide coaching on managing anxiety in similar situations.
+8. Stress & Confidence Profile: Determine an overall stress level (0-100, where 0=calm and 100=extremely stressed). List the key nervousness indicators observed (e.g., "stammering", "frequent repetitions", "elevated pace", "shallow breathing", "frequent hesitations"). Identify the peak stress moment and provide coaching on managing anxiety in similar situations.
+
+CRITICAL SCORING GUIDELINES:
+- Stammering, stuttering, or word repetitions = AUTOMATICALLY lower Confidence (max 40) and Rhythm (max 35)
+- Frequent hesitations (ums, ahs, long pauses) = penalize Confidence and Rhythm proportionally
+- Slurred or mumbled words = penalize Articulation; count as pronunciation errors
+- Multiple disfluencies = elevate Stress level and explicitly note in nervousnessIndicators
+- Do NOT reward effort; score based on actual audio quality and fluency
 
 LANGUAGE RULES: Never use the labels "Standard" or "Atypical". Describe vocal qualities with intent language — "forward resonance placement", "dropping laryngeal tension", "expanding breath support". Do not pathologize.
 ${goalContext ? `\nUSER CONTEXT:\n${goalContext}` : ''}

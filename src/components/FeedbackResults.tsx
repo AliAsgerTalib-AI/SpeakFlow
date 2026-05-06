@@ -64,21 +64,16 @@ const MetricTooltip: React.FC<{ metric: string; children: React.ReactNode }> = (
   const info = METRIC_TOOLTIPS[metric];
 
   return (
-    <div className="relative group">
+    <div
+      className="relative"
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
       {children}
-      {info && (
-        <div
-          className={`
-            absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50
-            bg-card border border-border rounded-lg shadow-xl
-            px-3 py-2 w-56 text-xs leading-relaxed text-muted-foreground
-            opacity-0 scale-95 origin-bottom pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto
-            transition-all duration-150
-          `}
-        >
+      {info && show && (
+        <div className="fixed bg-card border border-border rounded-lg shadow-2xl px-3 py-2 w-56 text-xs leading-relaxed text-muted-foreground z-50 pointer-events-none">
           <p className="font-semibold text-foreground mb-1">{info.label}</p>
           <p>{info.description}</p>
-          <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-card border-t border-l border-border rotate-45 -mt-1" />
         </div>
       )}
     </div>
@@ -236,39 +231,6 @@ export const FeedbackResults: React.FC<FeedbackResultsProps> = ({ feedback, scri
               </div>
             );
           })()}
-
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-3 md:gap-4">
-            {[
-              { label: 'Confidence', val: feedback.confidenceScore, icon: Target, color: 'text-primary' },
-              { label: 'Rhythm', val: feedback.rhythmScore, icon: Music, color: 'text-blue-500' },
-              { label: 'Intonation', val: feedback.intonationScore, icon: Volume2, color: 'text-indigo-500' },
-              { label: 'Breath', val: feedback.breathManagement?.score, icon: Wind, color: 'text-emerald-500' },
-              { label: 'Articulation', val: feedback.articulationScore, icon: Zap, color: 'text-amber-500' },
-              { label: 'Health', val: 100 - (feedback.vocalHealth?.strainLevel || 0), icon: Heart, color: 'text-rose-500' },
-              { label: 'Sentiment', val: Math.round((feedback.sentimentScore || 0) * 100), icon: Smile, color: 'text-orange-500' },
-              { label: 'Resonance', val: feedback.vocalResonance?.score, icon: Target, color: 'text-purple-500' },
-            ].map((stat, i) => (
-              <MetricTooltip key={i} metric={stat.label}>
-                <div className="p-4 bg-card/50 rounded-xl border border-border/50 shadow-sm space-y-2.5 cursor-help hover:border-primary/30 transition-colors">
-                  <div className="flex justify-between items-start">
-                    <p className="text-xs md:text-sm uppercase font-mono text-muted-foreground tracking-widest font-semibold">
-                      {stat.label}
-                    </p>
-                    <stat.icon className={`h-4 w-4 md:h-5 md:w-5 ${stat.color}`} />
-                  </div>
-                  <div className="flex items-end gap-1.5">
-                    <span className="text-2xl md:text-3xl font-bold tracking-tighter">{Math.round(stat.val || 0)}</span>
-                    <span className="text-muted-foreground mb-1 font-mono text-xs md:text-sm">%</span>
-                  </div>
-                  <Progress
-                    value={Math.round(stat.val || 0)}
-                    className="h-2 bg-muted"
-                    aria-label={`${stat.label} score: ${Math.round(stat.val || 0)}%`}
-                  />
-                </div>
-              </MetricTooltip>
-            ))}
-          </div>
 
           <PaceGauge wpm={feedback.paceAnalysis.wpm} />
 
