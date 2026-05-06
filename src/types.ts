@@ -49,6 +49,7 @@ export interface SpeechFeedback {
     feedback: string;
   };
   stressProfile: StressProfile;
+  expertSuggestion: string;
 }
 
 export interface SessionLog {
@@ -80,4 +81,26 @@ export interface StressProfile {
   nervousnessIndicators: string[];
   peakMoment: string;
   overallAssessment: string;
+}
+
+export type VocalGoal = 'FEMINIZATION' | 'MASCULINIZATION' | 'NEUTRAL' | 'MAINTENANCE';
+
+export interface GoldenStateBaseline {
+  confidenceScore: number;
+  rhythmScore: number;
+  intonationScore: number;
+  breathManagementScore: number;
+  articulationScore: number;
+  vocalHealthScore: number;
+  sentimentScore: number;
+  resonanceScore: number;
+  capturedAt: number;
+}
+
+export interface UserProfile {
+  vocalGoal: VocalGoal;
+  ageDecade: number;
+  biologicalSex?: string;
+  neurodiversityFlag: boolean;
+  goldenStateBaseline: GoldenStateBaseline | null;
 }

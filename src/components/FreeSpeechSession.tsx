@@ -15,10 +15,18 @@ import { analyzeSpeech } from '@/src/lib/gemini';
 import { getSpeechRecognition, isSpeechRecognitionSupported } from '@/src/hooks/useSpeechRecognition';
 import { TranscriptWithFeedback } from './TranscriptWithFeedback';
 import { LiveFeedbackBar } from './LiveFeedbackBar';
-import { SpeechFeedback } from '@/src/types';
+import { SpeechFeedback, UserProfile } from '@/src/types';
 import { toast } from 'sonner';
+import { computeVitalityScore } from '@/src/lib/vocalEngine';
+import { getSessionCount } from '@/src/lib/userProfile';
+import { Wand2, Bookmark } from 'lucide-react';
 
-export const FreeSpeechSession = () => {
+interface FreeSpeechSessionProps {
+  userProfile?: UserProfile | null;
+  onSetBaseline?: (feedback: SpeechFeedback) => void;
+}
+
+export const FreeSpeechSession: React.FC<FreeSpeechSessionProps> = ({ userProfile, onSetBaseline }) => {
   const { isRecording, startRecording, stopRecording, audioBase64, resetRecording, recordingTime, mimeType, error: recorderError } = useRecorder();
   // Generate random bar heights once for the audio visualizer animation.
   // These remain constant throughout the component's lifetime to create a consistent visual effect.
@@ -96,7 +104,7 @@ export const FreeSpeechSession = () => {
     analysisTriggeredRef.current = true;
     setIsAnalyzing(true);
     try {
-      const result = await analyzeSpeech(audioBase64, mimeType, "Analyze this unscripted free speech session.");
+      const result = await analyzeSpeech(audioBase64, mimeType, "Analyze this unscripted free speech session.", userProfile);
       if (!result.success) {
         const error = result.error;
         console.error("Analysis error:", error.type, error.message);
@@ -116,6 +124,17 @@ export const FreeSpeechSession = () => {
 
       setFeedback(result.data);
       saveSession("Free Speech Session", result.data);
+
+      // Auto-baseline prompt after 3 sessions
+      if (onSetBaseline && getSessionCount() === 3 && !userProfile?.goldenStateBaseline) {
+        toast("3 sessions complete!", {
+          description: "Set this as your baseline to track improvement over time.",
+          action: {
+            label: "Set Baseline",
+            onClick: () => onSetBaseline(result.data),
+          },
+        });
+      }
     } catch (error) {
       console.error("Unexpected error during analysis:", error);
       toast.error("An unexpected error occurred. Please try again.");
@@ -258,22 +277,62 @@ export const FreeSpeechSession = () => {
             {feedback && (
               <div className="w-full text-left space-y-6 md:space-y-8 animate-in fade-in duration-700">
                 <div className="p-4 md:p-6 bg-muted/40 rounded-2xl border border-border/50">
-                  <div className="flex justify-between items-center mb-4">
+                  <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
                     <p className="text-[9px] md:text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Transcription Audit</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleDownload}
-                      className="h-7 rounded-full text-[9px] gap-1.5 px-3 bg-background"
-                    >
-                      <Download className="h-3 w-3" /> Save JSON
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleDownload}
+                        className="h-7 rounded-full text-[9px] gap-1.5 px-3 bg-background"
+                      >
+                        <Download className="h-3 w-3" /> Save JSON
+                      </Button>
+                      {onSetBaseline && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => feedback && onSetBaseline(feedback)}
+                          className="h-7 rounded-full text-[9px] gap-1.5 px-3 bg-background"
+                        >
+                          <Bookmark className="h-3 w-3" /> Set Baseline
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <TranscriptWithFeedback 
-                    transcription={feedback.transcription || ""} 
-                    pronunciationFeedback={feedback.pronunciationFeedback} 
+                  <TranscriptWithFeedback
+                    transcription={feedback.transcription || ""}
+                    pronunciationFeedback={feedback.pronunciationFeedback}
                   />
                 </div>
+
+                {(() => {
+                  const vitality = computeVitalityScore(feedback, userProfile);
+                  const gradientMap: Record<string, string> = {
+                    'Peak Flow': 'bg-gradient-to-r from-emerald-500/20 to-teal-500/10',
+                    'Strong': 'bg-gradient-to-r from-blue-500/20 to-indigo-500/10',
+                    'Building': 'bg-gradient-to-r from-amber-500/20 to-orange-500/10',
+                    'Warming Up': 'bg-gradient-to-r from-rose-500/20 to-pink-500/10',
+                  };
+                  return (
+                    <div className={`p-5 md:p-6 rounded-2xl border border-primary/10 ${gradientMap[vitality.label]}`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-[9px] md:text-[10px] uppercase font-mono tracking-widest text-muted-foreground">Vocal Vitality</p>
+                          <div className="flex items-end gap-3 mt-2">
+                            <span className="text-3xl md:text-4xl font-bold">{vitality.score}</span>
+                            <Badge className="mb-1">{vitality.label}</Badge>
+                          </div>
+                        </div>
+                        {vitality.delta !== null && (
+                          <span className={`text-sm font-semibold ${vitality.delta >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                            {vitality.delta >= 0 ? '+' : ''}{vitality.delta}<br /><span className="text-xs text-muted-foreground">vs best</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-2 md:gap-3">
                   {[
@@ -305,10 +364,10 @@ export const FreeSpeechSession = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                   <div className="p-4 md:p-5 bg-primary/5 rounded-2xl border border-primary/10">
                     <h4 className="font-bold text-xs md:text-sm mb-3 flex items-center gap-2">
-                        <Star className="h-4 w-4 text-primary" /> Delivery Insights
+                        <Wand2 className="h-4 w-4 text-primary" /> Expert's Take
                     </h4>
                     <p className="text-[11px] md:text-xs text-muted-foreground leading-relaxed italic">
-                        {feedback.clinicalInsights}
+                        "{feedback.expertSuggestion}"
                     </p>
                   </div>
                   <div className="p-4 md:p-5 bg-amber-500/5 rounded-2xl border border-amber-500/10">

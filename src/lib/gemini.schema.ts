@@ -138,6 +138,7 @@ export const SPEECH_FEEDBACK_SCHEMA = {
       },
       required: ["stressLevel", "nervousnessIndicators", "peakMoment", "overallAssessment"],
     },
+    expertSuggestion: { type: Type.STRING },
   },
   required: [
     "transcription",
@@ -162,5 +163,6 @@ export const SPEECH_FEEDBACK_SCHEMA = {
     "environmentalNoise",
     "accentProfile",
     "stressProfile",
+    "expertSuggestion",
   ],
 };

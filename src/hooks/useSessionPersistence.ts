@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 interface SessionLog {
   id: string;
   userId: string;
-  timestamp: string;
+  timestamp: number;
   script: string;
   feedback: SpeechFeedback;
 }
@@ -14,7 +14,7 @@ export const useSessionPersistence = () => {
     const sessionLog: SessionLog = {
       id: Date.now().toString(),
       userId: 'anonymous',
-      timestamp: new Date().toISOString(),
+      timestamp: Date.now(),
       script,
       feedback,
     };

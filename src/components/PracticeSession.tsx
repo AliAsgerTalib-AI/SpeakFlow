@@ -6,15 +6,21 @@ import { parseScript } from '@/src/lib/scriptParser';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Mic, Upload, Briefcase, Monitor, TrendingUp } from 'lucide-react';
-import { SpeechFeedback } from '@/src/types';
+import { SpeechFeedback, UserProfile } from '@/src/types';
 import { toast } from 'sonner';
+import { getSessionCount } from '@/src/lib/userProfile';
 import { ScriptCard } from './ScriptCard';
 import { RecordingControls } from './RecordingControls';
 import { FeedbackResults } from './FeedbackResults';
 import { LiveFeedbackBar } from './LiveFeedbackBar';
 import { PromptDisplay } from './PromptDisplay';
 
-export const PracticeSession: React.FC = () => {
+interface PracticeSessionProps {
+  userProfile?: UserProfile | null;
+  onSetBaseline?: (feedback: SpeechFeedback) => void;
+}
+
+export const PracticeSession: React.FC<PracticeSessionProps> = ({ userProfile, onSetBaseline }) => {
   const { isRecording, recordingTime, audioUrl, audioBase64, mimeType, error: recorderError, startRecording, stopRecording, resetRecording } = useRecorder();
   const { saveSession, downloadSession } = useSessionPersistence();
   const [script, setScript] = useState<string>("Loading script...");
@@ -102,7 +108,7 @@ export const PracticeSession: React.FC = () => {
     setIsAnalyzing(true);
     try {
       const { readingText } = parseScript(script);
-      const result = await analyzeSpeech(audioBase64, mimeType, readingText);
+      const result = await analyzeSpeech(audioBase64, mimeType, readingText, userProfile);
       if (!result.success) {
         const error = result.error;
         console.error("Analysis error:", error.type, error.message);
@@ -122,6 +128,17 @@ export const PracticeSession: React.FC = () => {
 
       setFeedback(result.data);
       saveSession(script, result.data);
+
+      // Auto-baseline prompt after 3 sessions
+      if (onSetBaseline && getSessionCount() === 3 && !userProfile?.goldenStateBaseline) {
+        toast("3 sessions complete!", {
+          description: "Set this as your baseline to track improvement over time.",
+          action: {
+            label: "Set Baseline",
+            onClick: () => onSetBaseline(result.data),
+          },
+        });
+      }
     } catch (err) {
       console.error("Unexpected error during analysis:", err);
       toast.error("An unexpected error occurred. Please try again.");
@@ -273,7 +290,14 @@ export const PracticeSession: React.FC = () => {
             </p>
           </Card>
         ) : feedback ? (
-          <FeedbackResults feedback={feedback} script={script} onDownload={handleDownload} mode={sessionMode} />
+          <FeedbackResults
+            feedback={feedback}
+            script={script}
+            onDownload={handleDownload}
+            mode={sessionMode}
+            userProfile={userProfile}
+            onSetBaseline={onSetBaseline}
+          />
         ) : (
           <Card className="h-full min-h-[600px] flex flex-col items-center justify-center p-12 text-center bg-muted/5 border-dashed border-2">
             <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-6 relative">

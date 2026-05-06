@@ -5,10 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import {
   Download, Music, Heart, Activity, Wind, Zap, Smile, Target, Trophy, CheckCircle2,
-  Play, Info, Stethoscope, Volume2, AlertCircle
+  Play, Info, Stethoscope, Volume2, AlertCircle, Wand2, Bookmark
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { SpeechFeedback } from '@/src/types';
+import { SpeechFeedback, UserProfile } from '@/src/types';
+import { computeVitalityScore } from '@/src/lib/vocalEngine';
 import { TranscriptWithFeedback } from './TranscriptWithFeedback';
 import { ExercisePanel } from './ExercisePanel';
 import { StressAnalysis } from './StressAnalysis';
@@ -19,6 +20,8 @@ interface FeedbackResultsProps {
   script: string;
   onDownload: () => void;
   mode?: 'general' | 'interview' | 'presentation' | 'sales';
+  userProfile?: UserProfile | null;
+  onSetBaseline?: (feedback: SpeechFeedback) => void;
 }
 
 const PaceGauge: React.FC<{ wpm: number }> = ({ wpm }) => {
@@ -69,8 +72,9 @@ const PaceGauge: React.FC<{ wpm: number }> = ({ wpm }) => {
   );
 };
 
-export const FeedbackResults: React.FC<FeedbackResultsProps> = ({ feedback, script, onDownload, mode = 'general' }) => {
+export const FeedbackResults: React.FC<FeedbackResultsProps> = ({ feedback, script, onDownload, mode = 'general', userProfile, onSetBaseline }) => {
   const totalFillers = feedback.fillerWordDetection.reduce((acc, curr) => acc + curr.count, 0);
+  const vitality = computeVitalityScore(feedback, userProfile);
 
   return (
     <div className="space-y-6 animate-in slide-in-from-right duration-500">
@@ -82,6 +86,17 @@ export const FeedbackResults: React.FC<FeedbackResultsProps> = ({ feedback, scri
               <CardDescription>AI Pattern Analysis</CardDescription>
             </div>
             <div className="flex flex-wrap gap-2 justify-end">
+              {onSetBaseline && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onSetBaseline(feedback)}
+                  aria-label="Set this session as baseline"
+                  className="h-8 rounded-full text-[10px] gap-1.5"
+                >
+                  <Bookmark className="h-3 w-3" /> Set Baseline
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -131,6 +146,36 @@ export const FeedbackResults: React.FC<FeedbackResultsProps> = ({ feedback, scri
           </div>
         </CardHeader>
         <CardContent className="space-y-8 pt-6">
+          {(() => {
+            const gradientMap: Record<string, string> = {
+              'Peak Flow': 'bg-gradient-to-r from-emerald-500/20 to-teal-500/10',
+              'Strong': 'bg-gradient-to-r from-blue-500/20 to-indigo-500/10',
+              'Building': 'bg-gradient-to-r from-amber-500/20 to-orange-500/10',
+              'Warming Up': 'bg-gradient-to-r from-rose-500/20 to-pink-500/10',
+            };
+            return (
+              <div className={`p-5 md:p-6 rounded-2xl border border-primary/10 ${gradientMap[vitality.label]}`}>
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div>
+                    <p className="text-[9px] md:text-[10px] uppercase font-mono tracking-widest text-muted-foreground">Vocal Vitality</p>
+                    <div className="flex items-end gap-3 mt-2">
+                      <span className="text-3xl md:text-4xl font-bold">{vitality.score}</span>
+                      <Badge className="mb-1">{vitality.label}</Badge>
+                    </div>
+                  </div>
+                  {vitality.delta !== null && (
+                    <div className="text-right">
+                      <p className={`text-lg font-semibold ${vitality.delta >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                        {vitality.delta >= 0 ? '+' : ''}{vitality.delta}
+                      </p>
+                      <p className="text-xs text-muted-foreground">vs your best</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-2 md:gap-3">
             {[
               { label: 'Confidence', val: feedback.confidenceScore, icon: Target, color: 'text-primary' },
@@ -216,6 +261,15 @@ export const FeedbackResults: React.FC<FeedbackResultsProps> = ({ feedback, scri
           <div className="space-y-8">
             <div>
               <h4 className="flex items-center gap-2 text-sm font-bold mb-4 px-1">
+                <Wand2 className="h-4 w-4 text-primary fill-primary/20" /> Expert's Take
+              </h4>
+              <div className="p-6 bg-primary/5 rounded-2xl border border-primary/10 mb-8">
+                <p className="text-sm text-muted-foreground leading-relaxed italic">
+                  "{feedback.expertSuggestion}"
+                </p>
+              </div>
+
+              <h4 className="flex items-center gap-2 text-sm font-bold mb-4 px-1">
                 <Play className="h-4 w-4 text-primary fill-primary/20" /> Analysis & Actionable Tips
               </h4>
               <div className="space-y-4">
@@ -289,22 +343,6 @@ export const FeedbackResults: React.FC<FeedbackResultsProps> = ({ feedback, scri
                   </div>
                 )}
               </div>
-            </div>
-
-            <div className="p-6 bg-primary/5 rounded-2xl border border-primary/10">
-              <h4 className="flex items-center gap-2 text-sm font-bold mb-4 text-primary">
-                <Trophy className="h-4 w-4" /> Pro Coaching Tips
-              </h4>
-              <ul className="space-y-3">
-                {feedback.generalAdvice.map((adv, i) => (
-                  <li key={i} className="text-sm text-muted-foreground flex gap-3 leading-relaxed">
-                    <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
-                      {i + 1}
-                    </span>
-                    {adv}
-                  </li>
-                ))}
-              </ul>
             </div>
 
             {feedback.clinicalInsights && (

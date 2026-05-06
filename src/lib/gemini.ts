@@ -1,13 +1,16 @@
 import { GoogleGenAI } from "@google/genai";
-import { SpeechFeedback, Exercise } from "@/src/types";
+import { SpeechFeedback, Exercise, UserProfile } from "@/src/types";
 import { SPEECH_FEEDBACK_SCHEMA, EXERCISES_SCHEMA } from "./gemini.schema";
 import { GeminiError, GeminiErrorType, GeminiResult, validateRequiredFields } from "./errors";
+import { buildGoalContext } from "./vocalEngine";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const DEFAULT_MODEL = "gemini-3-flash-preview";
 const MODEL = process.env.GEMINI_MODEL || DEFAULT_MODEL;
 
-export const ANALYSIS_SYSTEM_PROMPT = `Act as a Speech Pathologist and professional Voice Coach.
+export function buildAnalysisPrompt(goalContext?: string): string {
+  return `You are a Speech-Language Pathologist with 20 years of clinical experience and a professional Voice Coach. You help speakers find their authentic voice.
+
 Analyze this public speaking audio based on the following script content.
 
 Provide a detailed analysis including:
@@ -20,7 +23,13 @@ Provide a detailed analysis including:
 7. Accent Profile: Identify the primary regional/cultural accent and provide a clarity score (0-100) based on how easily a general audience would understand the speech.
 8. Stress & Confidence Profile: Determine an overall stress level (0-100, where 0=calm and 100=extremely stressed). List the key nervousness indicators observed (e.g., "elevated pace", "shallow breathing", "frequent hesitations"). Identify the peak stress moment and provide coaching on managing anxiety in similar situations.
 
+LANGUAGE RULES: Never use the labels "Standard" or "Atypical". Describe vocal qualities with intent language — "forward resonance placement", "dropping laryngeal tension", "expanding breath support". Do not pathologize.
+${goalContext ? `\nUSER CONTEXT:\n${goalContext}` : ''}
+
+EXPERT SUGGESTION: In the expertSuggestion field, provide exactly ONE high-impact, immediately actionable coaching cue — the single most important thing this speaker can work on right now. Write it as a direct coaching statement, not a list.
+
 IMPORTANT: All percentage-based metrics MUST be returned as numbers between 0 and 100 (e.g., 85 for 85%), except sentimentScore which should be 0-1.`;
+}
 
 const REQUIRED_FIELDS = [
   "transcription",
@@ -45,22 +54,26 @@ const REQUIRED_FIELDS = [
   "environmentalNoise",
   "accentProfile",
   "stressProfile",
+  "expertSuggestion",
 ];
 
 export async function analyzeSpeech(
   audioBase64: string,
   mimeType: string,
-  scriptText: string
+  scriptText: string,
+  profile?: UserProfile | null
 ): Promise<GeminiResult<SpeechFeedback>> {
   try {
     const safeMimeType = mimeType || "audio/webm";
+    const goalContext = buildGoalContext(profile);
+    const systemPrompt = buildAnalysisPrompt(goalContext);
 
     const response = await ai.models.generateContent({
       model: MODEL,
       contents: {
         parts: [
           {
-            text: ANALYSIS_SYSTEM_PROMPT,
+            text: systemPrompt,
           },
           {
             text: `Script to analyze against:\n${scriptText}`,

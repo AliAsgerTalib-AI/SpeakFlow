@@ -1,16 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { PracticeSession } from './components/PracticeSession';
 import { FreeSpeechSession } from './components/FreeSpeechSession';
 import { Glossary } from './components/Glossary';
 import { PronunciationDictionary } from './components/PronunciationDictionary';
+import { VocalProfileSetup } from './components/VocalProfileSetup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
-import { Mic2, LayoutDashboard, ShieldCheck, MessageSquare, BookOpen, BookMarked } from 'lucide-react';
+import { Mic2, LayoutDashboard, ShieldCheck, MessageSquare, BookOpen, BookMarked, UserCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'sonner';
+import { UserProfile, SpeechFeedback } from '@/src/types';
+import { loadUserProfile, setGoldenStateBaseline } from '@/src/lib/userProfile';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("practice");
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
+  const [profileSetupMode, setProfileSetupMode] = useState<'onboarding' | 'edit'>('onboarding');
+
+  useEffect(() => {
+    const profile = loadUserProfile();
+    setUserProfile(profile);
+    if (!profile) {
+      setShowProfileSetup(true);
+    }
+  }, []);
+
+  const handleSetBaseline = (feedback: SpeechFeedback) => {
+    setGoldenStateBaseline(feedback);
+    const updated = loadUserProfile();
+    setUserProfile(updated);
+    toast.success('Golden baseline saved! Future sessions will compare against this.');
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20">
@@ -49,6 +72,21 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setProfileSetupMode('edit');
+                setShowProfileSetup(true);
+              }}
+              className="relative"
+              title="Edit vocal profile"
+            >
+              <UserCircle2 className="h-5 w-5" />
+              {userProfile && (
+                <div className="absolute bottom-1 right-1 w-2 h-2 bg-primary rounded-full" />
+              )}
+            </Button>
           </div>
         </div>
 
@@ -86,8 +124,12 @@ export default function App() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
           >
-            {activeTab === "practice" && <PracticeSession />}
-            {activeTab === "free-speech" && <FreeSpeechSession />}
+            {activeTab === "practice" && (
+              <PracticeSession userProfile={userProfile} onSetBaseline={handleSetBaseline} />
+            )}
+            {activeTab === "free-speech" && (
+              <FreeSpeechSession userProfile={userProfile} onSetBaseline={handleSetBaseline} />
+            )}
             {activeTab === "dashboard" && <Dashboard />}
             {activeTab === "dictionary" && <PronunciationDictionary />}
             {activeTab === "glossary" && <Glossary />}
@@ -125,6 +167,16 @@ export default function App() {
         </div>
       </footer>
       
+      <VocalProfileSetup
+        open={showProfileSetup}
+        onComplete={(profile) => {
+          setUserProfile(profile);
+          setShowProfileSetup(false);
+        }}
+        existingProfile={userProfile}
+        mode={profileSetupMode}
+      />
+
       <Toaster position="top-center" richColors />
     </div>
   );
