@@ -220,11 +220,6 @@ export const FreeSpeechSession = () => {
                       />
                     ))}
                   </div>
-                  <div className="bg-primary/5 p-5 md:p-6 rounded-2xl border border-primary/20 bg-muted/30 max-h-32 md:max-h-48 overflow-y-auto">
-                    <p className="italic text-sm md:text-lg font-medium text-foreground/80 leading-relaxed">
-                      "{realTimeTranscript || 'Listening for your voice...'}"
-                    </p>
-                  </div>
                   <LiveFeedbackBar
                     isRecording={isRecording}
                     realTimeTranscript={realTimeTranscript}

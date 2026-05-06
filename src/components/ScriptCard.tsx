@@ -40,15 +40,6 @@ export const ScriptCard: React.FC<ScriptCardProps> = ({
 
   return (
     <div className="space-y-4">
-      {scriptPrompt && (
-        <Card className="border border-border/50 bg-muted/30">
-          <CardContent className="pt-4 pb-4">
-            <p className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground mb-2">Prompt</p>
-            <p className="text-sm text-foreground/80 leading-relaxed">{scriptPrompt}</p>
-          </CardContent>
-        </Card>
-      )}
-
       <Card className="border-2 border-primary/20 overflow-hidden bg-card/50 backdrop-blur-sm">
         <CardHeader className="bg-primary/5 pb-3">
           <div className="flex justify-between items-center">
@@ -84,6 +75,7 @@ export const ScriptCard: React.FC<ScriptCardProps> = ({
                     <ReactMarkdown>{readingText}</ReactMarkdown>
                   </div>
                 )}
+              </div>
             </div>
           </div>
           {isRecording && (
