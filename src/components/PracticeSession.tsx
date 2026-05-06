@@ -1,50 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRecorder } from '@/src/hooks/useRecorder';
+import { useSessionPersistence } from '@/src/hooks/useSessionPersistence';
 import { analyzeSpeech, generatePracticeScript } from '@/src/lib/gemini';
 import { AudioVisualizer } from './AudioVisualizer';
+import { TranscriptWithFeedback } from './TranscriptWithFeedback';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mic, Square, Play, RefreshCw, Loader2, Info, ChevronRight, CheckCircle2, TrendingUp, TrendingDown, Target, Zap, Trophy, AlertCircle, Stethoscope, Music, Volume2, Heart, Wind, Activity, Smile, Shield, Download, Save } from 'lucide-react';
+import { Mic, Square, Play, RefreshCw, Loader2, Info, ChevronRight, CheckCircle2, TrendingUp, TrendingDown, Target, Zap, Trophy, AlertCircle, Stethoscope, Music, Volume2, Heart, Wind, Activity, Smile, Shield, Download } from 'lucide-react';
 import { SpeechFeedback } from '@/src/types';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'motion/react';
-
-const TranscriptWithFeedback = ({ transcription, pronunciationFeedback }: { transcription: string, pronunciationFeedback: { word: string, suggestions: string }[] }) => {
-  const words = transcription.split(/\s+/);
-  return (
-    <div className="flex flex-wrap gap-x-1.5 gap-y-2 leading-relaxed text-base md:text-lg lg:text-xl font-medium">
-      {words.map((word, i) => {
-        const cleanWord = word.replace(/[.,!?;:"'()]/g, "").toLowerCase();
-        const feedback = pronunciationFeedback.find(f => f.word.toLowerCase() === cleanWord);
-        
-        if (feedback) {
-          return (
-            <span key={i} className="group relative inline-block">
-              <span className="text-destructive border-b-2 border-destructive/30 cursor-help hover:bg-destructive/5 px-1 -mx-1 rounded transition-all">
-                {word}
-              </span>
-              <span className="absolute bottom-full left-0 mb-2 p-3 bg-card text-card-foreground text-[10px] rounded-xl border border-border shadow-2xl opacity-0 group-hover:opacity-100 transition-all scale-95 origin-bottom-left group-hover:scale-100 whitespace-normal min-w-[180px] z-[60] pointer-events-none">
-                <span className="flex items-center gap-2 mb-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
-                    <span className="font-mono text-[8px] uppercase tracking-widest text-muted-foreground">Clinical Correction</span>
-                </span>
-                <p className="font-sans text-[11px] leading-relaxed text-foreground/90 italic">
-                    "{feedback.suggestions}"
-                </p>
-                <span className="absolute top-full left-4 w-2 h-2 bg-card border-r border-b border-border rotate-45 -mt-1" />
-              </span>
-            </span>
-          );
-        }
-        return <span key={i} className="text-foreground/80">{word}</span>;
-      })}
-    </div>
-  );
-};
 
 const PaceGauge = ({ wpm }: { wpm: number }) => {
   const normalizedPace = Math.min(Math.max(((wpm - 80) / 120) * 100, 0), 100);
@@ -98,56 +67,61 @@ const RealTimeScriptHighlight = ({ script, realTimeTranscript }: { script: strin
   const scriptWords = cleanScript.split(/\s+/).filter(w => w.length > 0);
   const transcriptWords = realTimeTranscript.toLowerCase().replace(/[.,!?;:"'()]/g, "").split(/\s+/).filter(w => w.length > 0);
 
-  let transcriptIndex = 0;
-  
+  const wordStatuses = React.useMemo(() => {
+    const statuses: Array<'pending' | 'correct' | 'current' | 'error'> = [];
+    let transcriptIndex = 0;
+
+    for (let i = 0; i < scriptWords.length; i++) {
+      const cleanWord = scriptWords[i].toLowerCase().replace(/[.,!?;:"'()]/g, "");
+      let status: 'pending' | 'correct' | 'current' | 'error' = 'pending';
+
+      // Find this word in transcript starting from where we left off
+      let foundIndex = -1;
+      const searchLimit = Math.min(transcriptIndex + 10, transcriptWords.length);
+      for (let j = transcriptIndex; j < searchLimit; j++) {
+        if (transcriptWords[j] === cleanWord) {
+          foundIndex = j;
+          break;
+        }
+      }
+
+      if (foundIndex !== -1) {
+        status = 'correct';
+        transcriptIndex = foundIndex + 1;
+      } else if (i < scriptWords.length - 1) {
+        // Check if next word is found (means current word was skipped/mispronounced)
+        const nextCleanWord = scriptWords[i + 1].toLowerCase().replace(/[.,!?;:"'()]/g, "");
+        for (let j = transcriptIndex; j < searchLimit; j++) {
+          if (transcriptWords[j] === nextCleanWord) {
+            status = 'error';
+            break;
+          }
+        }
+      }
+
+      // Current word is the first pending after all correct ones
+      if (status === 'pending' && transcriptIndex > 0 && statuses.every(s => s !== 'pending')) {
+        status = 'current';
+      }
+
+      statuses.push(status);
+    }
+
+    return statuses;
+  }, [scriptWords, transcriptWords]);
+
   return (
     <div className="flex flex-wrap gap-x-1.5 gap-y-2 leading-relaxed text-lg md:text-xl font-medium">
       {scriptWords.map((word, i) => {
-        const cleanWord = word.toLowerCase().replace(/[.,!?;:"'()]/g, "");
-        
-        // Find if this word appears in any of the remaining transcript words
-        let foundIndex = -1;
-        // Search a window of 5 words to stay reactive
-        const searchLimit = Math.min(transcriptIndex + 10, transcriptWords.length);
-        for (let j = transcriptIndex; j < searchLimit; j++) {
-            if (transcriptWords[j] === cleanWord) {
-                foundIndex = j;
-                break;
-            }
-        }
-
-        let status: 'pending' | 'correct' | 'current' | 'error' = 'pending';
-        
-        if (foundIndex !== -1) {
-            status = 'correct';
-            transcriptIndex = foundIndex + 1;
-        } else if (transcriptIndex > 0 && i < scriptWords.length - 1 && transcriptIndex < transcriptWords.length) {
-            // Check if we passed it - if the NEXT word in script is found, then this one was skipped/mispronounced
-            const nextCleanWord = scriptWords[i+1].toLowerCase().replace(/[.,!?;:"'()]/g, "");
-            let nextFoundIndex = -1;
-            for (let j = transcriptIndex; j < searchLimit; j++) {
-                if (transcriptWords[j] === nextCleanWord) {
-                    nextFoundIndex = j;
-                    break;
-                }
-            }
-            if (nextFoundIndex !== -1) {
-                status = 'error';
-            }
-        }
-
-        // Determine if it's the current word (rough estimate)
-        if (status === 'pending' && i === scriptWords.filter((_, idx) => idx < i && status !== 'pending').length) {
-            status = 'current';
-        }
+        const status = wordStatuses[i];
 
         return (
-          <motion.span 
-            key={i} 
+          <motion.span
+            key={i}
             initial={false}
-            animate={{ 
-                color: status === 'correct' ? 'hsl(var(--primary))' : 
-                       status === 'error' ? 'hsl(var(--destructive))' : 
+            animate={{
+                color: status === 'correct' ? 'hsl(var(--primary))' :
+                       status === 'error' ? 'hsl(var(--destructive))' :
                        status === 'current' ? 'hsl(var(--foreground))' : 'rgba(var(--foreground), 0.3)',
                 scale: status === 'current' ? 1.05 : 1
             }}
@@ -168,11 +142,12 @@ const RealTimeScriptHighlight = ({ script, realTimeTranscript }: { script: strin
 
 export const PracticeSession: React.FC = () => {
   const { isRecording, recordingTime, audioUrl, audioBase64, mimeType, startRecording, stopRecording, resetRecording } = useRecorder();
+  const { saveSession, downloadSession } = useSessionPersistence();
   const [script, setScript] = useState<string>("Loading script...");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [feedback, setFeedback] = useState<SpeechFeedback | null>(null);
   const [realTimeTranscript, setRealTimeTranscript] = useState<string>("");
-  const [recognition, setRecognition] = useState<any>(null);
+  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
 
   useEffect(() => {
     // Initialize Speech Recognition
@@ -252,22 +227,7 @@ export const PracticeSession: React.FC = () => {
     try {
       const result = await analyzeSpeech(audioBase64, mimeType, script);
       setFeedback(result);
-      
-      // Save to localStorage for Dashboard
-      const sessionLog = {
-        id: Date.now().toString(),
-        userId: 'anonymous',
-        timestamp: new Date().toISOString(),
-        script: script,
-        feedback: result
-      };
-      
-      const saved = localStorage.getItem('speakflow_sessions');
-      const sessions = saved ? JSON.parse(saved) : [];
-      sessions.unshift(sessionLog);
-      localStorage.setItem('speakflow_sessions', JSON.stringify(sessions.slice(0, 50)));
-      
-      toast.success("Analysis complete and saved locally!");
+      saveSession(script, result);
     } catch (err) {
       console.error(err);
       toast.error("Failed to analyze speech.");
@@ -276,25 +236,9 @@ export const PracticeSession: React.FC = () => {
     }
   };
 
-  const downloadSession = () => {
+  const handleDownload = () => {
     if (!feedback) return;
-    const sessionData = {
-      timestamp: new Date().toISOString(),
-      type: 'scripted',
-      script,
-      feedback,
-      audio: audioBase64 
-    };
-    const blob = new Blob([JSON.stringify(sessionData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `speakflow-scripted-${new Date().getTime()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success("Session saved to device!");
+    downloadSession('scripted', feedback, script);
   };
 
   useEffect(() => {
@@ -426,10 +370,10 @@ export const PracticeSession: React.FC = () => {
                         <CardDescription>AI Pattern Analysis</CardDescription>
                       </div>
                       <div className="flex flex-wrap gap-2 justify-end">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={downloadSession}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleDownload}
                           className="h-8 rounded-full text-[10px] gap-1.5"
                         >
                           <Download className="h-3 w-3" /> Save JSON

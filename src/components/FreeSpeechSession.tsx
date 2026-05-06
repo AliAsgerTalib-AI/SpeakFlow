@@ -1,58 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Mic, Square, RefreshCw, Loader2, Activity, 
-  Target, Zap, Trophy, Music, Volume2, Smile, Wind, 
+import {
+  Mic, Square, RefreshCw, Loader2, Activity,
+  Target, Zap, Trophy, Music, Volume2, Smile, Wind,
   Shield, Star, Heart, Download
 } from 'lucide-react';
 import { useRecorder } from '@/src/hooks/useRecorder';
+import { useSessionPersistence } from '@/src/hooks/useSessionPersistence';
 import { analyzeSpeech } from '@/src/lib/gemini';
+import { TranscriptWithFeedback } from './TranscriptWithFeedback';
 import { SpeechFeedback } from '@/src/types';
 import { toast } from 'sonner';
 
-const TranscriptWithFeedback = ({ transcription, pronunciationFeedback }: { transcription: string, pronunciationFeedback: { word: string, suggestions: string }[] }) => {
-  const words = transcription.split(/\s+/);
-  return (
-    <div className="flex flex-wrap gap-x-1.5 gap-y-2 leading-relaxed text-base md:text-lg font-medium">
-      {words.map((word, i) => {
-        const cleanWord = word.replace(/[.,!?;:"'()]/g, "").toLowerCase();
-        const feedback = pronunciationFeedback.find(f => f.word.toLowerCase() === cleanWord);
-        
-        if (feedback) {
-          return (
-            <span key={i} className="group relative inline-block">
-              <span className="text-destructive border-b-2 border-destructive/30 cursor-help hover:bg-destructive/5 px-1 -mx-1 rounded transition-all">
-                {word}
-              </span>
-              <span className="absolute bottom-full left-0 mb-2 p-3 bg-card text-card-foreground text-[10px] rounded-xl border border-border shadow-2xl opacity-0 group-hover:opacity-100 transition-all scale-95 origin-bottom-left group-hover:scale-100 whitespace-normal min-w-[180px] z-[60] pointer-events-none">
-                <span className="flex items-center gap-2 mb-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
-                    <span className="font-mono text-[8px] uppercase tracking-widest text-muted-foreground">Correction</span>
-                </span>
-                <p className="font-sans text-[11px] leading-relaxed text-foreground/90 italic">
-                    "{feedback.suggestions}"
-                </p>
-                <span className="absolute top-full left-4 w-2 h-2 bg-card border-r border-b border-border rotate-45 -mt-1" />
-              </span>
-            </span>
-          );
-        }
-        return <span key={i} className="text-foreground/80">{word}</span>;
-      })}
-    </div>
-  );
-};
-
 export const FreeSpeechSession = () => {
   const { isRecording, startRecording, stopRecording, audioBase64, resetRecording, recordingTime, mimeType } = useRecorder();
+  const barHeights = useMemo(() => [...Array(12)].map(() => Math.random() * 40 + 10), []);
+  const { saveSession, downloadSession } = useSessionPersistence();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [feedback, setFeedback] = useState<SpeechFeedback | null>(null);
   const [realTimeTranscript, setRealTimeTranscript] = useState<string>("");
-  const [recognition, setRecognition] = useState<any>(null);
+  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
 
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -106,22 +77,7 @@ export const FreeSpeechSession = () => {
     try {
       const result = await analyzeSpeech(audioBase64, mimeType, "Analyze this unscripted free speech session.");
       setFeedback(result);
-      
-      // Save to localStorage for Dashboard
-      const sessionLog = {
-        id: Date.now().toString(),
-        userId: 'anonymous',
-        timestamp: new Date().toISOString(),
-        script: "Free Speech Session",
-        feedback: result
-      };
-      
-      const saved = localStorage.getItem('speakflow_sessions');
-      const sessions = saved ? JSON.parse(saved) : [];
-      sessions.unshift(sessionLog);
-      localStorage.setItem('speakflow_sessions', JSON.stringify(sessions.slice(0, 50)));
-
-      toast.success("Speech analyzed and saved locally!");
+      saveSession("Free Speech Session", result);
     } catch (error) {
       toast.error("Analysis failed. Try recording again.");
     } finally {
@@ -129,24 +85,9 @@ export const FreeSpeechSession = () => {
     }
   };
 
-  const downloadSession = () => {
+  const handleDownload = () => {
     if (!feedback) return;
-    const sessionData = {
-      timestamp: new Date().toISOString(),
-      type: 'free-speech',
-      feedback,
-      audio: audioBase64 
-    };
-    const blob = new Blob([JSON.stringify(sessionData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `speakflow-free-${new Date().getTime()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success("Session saved to device!");
+    downloadSession('free-speech', feedback);
   };
 
   const totalFillers = feedback?.fillerWordDetection.reduce((acc, curr) => acc + curr.count, 0) || 0;
@@ -219,10 +160,10 @@ export const FreeSpeechSession = () => {
                   className="w-full max-w-xl space-y-6 md:space-y-8"
                 >
                   <div className="flex justify-center gap-1.5 h-10 items-center">
-                    {[...Array(12)].map((_, i) => (
+                    {barHeights.map((height, i) => (
                       <motion.div
                         key={i}
-                        animate={{ height: [12, Math.random() * 40 + 10, 12] }}
+                        animate={{ height: [12, height, 12] }}
                         transition={{ repeat: Infinity, duration: 0.6, delay: i * 0.08 }}
                         className="w-1 md:w-1.5 bg-primary/30 rounded-full"
                       />
@@ -268,10 +209,10 @@ export const FreeSpeechSession = () => {
                 <div className="p-4 md:p-6 bg-muted/40 rounded-2xl border border-border/50">
                   <div className="flex justify-between items-center mb-4">
                     <p className="text-[9px] md:text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Transcription Audit</p>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={downloadSession}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownload}
                       className="h-7 rounded-full text-[9px] gap-1.5 px-3 bg-background"
                     >
                       <Download className="h-3 w-3" /> Save JSON

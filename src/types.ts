@@ -53,7 +53,7 @@ export interface SpeechFeedback {
 export interface SessionLog {
   id: string;
   userId: string;
-  timestamp: any; // Firestore timestamp
+  timestamp: number; // Unix timestamp in milliseconds
   script: string;
   audioUrl?: string; // If we store it, otherwise just metadata
   feedback: SpeechFeedback;

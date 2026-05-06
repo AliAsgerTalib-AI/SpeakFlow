@@ -1,19 +1,20 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const DEFAULT_MODEL = "gemini-3-flash-preview";
+const MODEL = process.env.GEMINI_MODEL || DEFAULT_MODEL;
 
-export async function analyzeSpeech(audioBase64: string, mimeType: string, scriptText: string) {
-  const model = process.env.GEMINI_MODEL || "gemini-3-flash-preview"; 
+export async function analyzeSpeech(audioBase64: string, mimeType: string, scriptText: string) { 
   const safeMimeType = mimeType || "audio/webm";
   
   const response = await ai.models.generateContent({
-    model: model,
+    model: MODEL,
     contents: {
       parts: [
         {
-          text: `Act as a Speech Pathologist and professional Voice Coach. 
-          Analyze this public speaking audio based on the following script: "${scriptText}". 
-          
+          text: `Act as a Speech Pathologist and professional Voice Coach.
+          Analyze this public speaking audio based on the following script content.
+
           Provide a detailed analysis including:
           1. Transcription and text-to-speech alignment.
           2. Pronunciation errors and clinical speech insights.
@@ -22,6 +23,9 @@ export async function analyzeSpeech(audioBase64: string, mimeType: string, scrip
           5. Emotional tone and sentiment intensity.
           6. Advanced detections: Micro-hesitations (sub-500ms pauses), Plosive clarity (/p/, /b/, /t/), and Environmental Signal-to-Noise quality.
           7. Accent Profile: Identify the primary regional/cultural accent and provide a clarity score (0-100) based on how easily a general audience would understand the speech.`
+        },
+        {
+          text: `Script to analyze against:\n${scriptText}`
         },
         {
           inlineData: {
@@ -168,18 +172,37 @@ export async function analyzeSpeech(audioBase64: string, mimeType: string, scrip
     }
   });
 
-  return JSON.parse(response.text || "{}");
+  try {
+    const parsed = JSON.parse(response.text || "{}");
+    // Validate required top-level fields
+    if (!parsed.transcription || !parsed.paceAnalysis) {
+      return { error: "Invalid response structure from Gemini" };
+    }
+    return parsed;
+  } catch (e) {
+    console.error("Failed to parse Gemini response:", e);
+    return { error: "Failed to parse API response" };
+  }
 }
 
-export async function generatePracticeScript(topic: string = "confidence") {
-  const model = process.env.GEMINI_MODEL || "gemini-3-flash-preview";
+export async function generatePracticeScript(topic?: string) {
+  const topics = [
+    "innovation",
+    "leadership",
+    "teamwork",
+    "resilience",
+    "communication",
+    "confidence",
+    "problem-solving",
+    "growth mindset"
+  ];
+
+  const selectedTopic = topic || topics[Math.floor(Math.random() * topics.length)];
+
   const response = await ai.models.generateContent({
-    model: model,
-    contents: `Generate a short (30-60 second) public speaking practice script about "${topic}". 
-    it should be professional, engaging, and designed to help build confidence.`
+    model: MODEL,
+    contents: `Generate a short (30-60 second) public speaking practice script about "${selectedTopic}".
+    It should be professional, engaging, and designed to help build presentation skills. Make it suitable for delivering in one breath.`
   });
   return response.text;
 }
-
-// Ensure GEMINI_MODEL is declared in env
-export const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3-flash-preview";

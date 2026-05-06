@@ -112,7 +112,7 @@ export default function App() {
               <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
               <a href="#" className="hover:text-primary transition-colors">Support</a>
             </div>
-            <p>© 2026 SpeakFlow AI. Built with Gemini 1.5 Flash.</p>
+            <p>© 2026 SpeakFlow AI. Built with Gemini 3 Flash.</p>
           </div>
         </div>
       </footer>
