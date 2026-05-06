@@ -3,6 +3,7 @@ import { useRecorder } from '@/src/hooks/useRecorder';
 import { useSessionPersistence } from '@/src/hooks/useSessionPersistence';
 import { analyzeSpeech, generatePracticeScript } from '@/src/lib/gemini';
 import { getSpeechRecognition, isSpeechRecognitionSupported } from '@/src/hooks/useSpeechRecognition';
+import { parseScript } from '@/src/lib/scriptParser';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Mic, Upload, Briefcase, Monitor, TrendingUp } from 'lucide-react';
@@ -74,6 +75,14 @@ export const PracticeSession: React.FC = () => {
     loadNewScript();
   }, []);
 
+  useEffect(() => {
+    if (scriptMode === 'generate') {
+      loadNewScript();
+    }
+    setCustomScriptInput("");
+    setCustomScriptSubmitted(false);
+  }, [sessionMode, scriptMode]);
+
   const loadNewScript = async () => {
     if (scriptMode === 'custom') return;
     setScript("Generating a new challenge...");
@@ -137,7 +146,8 @@ export const PracticeSession: React.FC = () => {
     analysisTriggeredRef.current = true;
     setIsAnalyzing(true);
     try {
-      const result = await analyzeSpeech(audioBase64, mimeType, script);
+      const { readingText } = parseScript(script);
+      const result = await analyzeSpeech(audioBase64, mimeType, readingText);
       if (!result.success) {
         const error = result.error;
         console.error("Analysis error:", error.type, error.message);

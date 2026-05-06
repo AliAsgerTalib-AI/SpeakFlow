@@ -2,7 +2,6 @@ import React, { useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { RefreshCw, Mic } from 'lucide-react';
 import { motion } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
@@ -10,6 +9,7 @@ import { RealTimeScriptHighlight } from './RealTimeScriptHighlight';
 import { TranscriptWithFeedback } from './TranscriptWithFeedback';
 import { SpeechFeedback } from '@/src/types';
 import { computeWordStatuses } from '@/src/lib/wordMatching';
+import { parseScript } from '@/src/lib/scriptParser';
 
 interface ScriptCardProps {
   script: string;
@@ -75,71 +75,90 @@ export const ScriptCard: React.FC<ScriptCardProps> = ({
     }
   }, [isRecording, realTimeTranscript, script]);
 
-  return (
-    <Card className="border-2 border-primary/20 overflow-hidden bg-card/50 backdrop-blur-sm">
-      <CardHeader className="bg-primary/5 pb-4">
-        <div className="flex justify-between items-center">
-          <CardTitle className="font-mono text-sm uppercase tracking-wider text-muted-foreground">
-            Practice Script
-          </CardTitle>
-          {onLoadNewScript && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onLoadNewScript}
-              disabled={isRecording}
-              aria-label="Generate a new practice script"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" /> New Script
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="pt-6 relative min-h-[200px]">
-        <div className="h-[300px] overflow-y-auto rounded-lg" ref={scrollViewportRef}>
-          <div className="space-y-6 pr-4">
-            <div
-              className={`leading-relaxed font-sans transition-opacity pr-4 ${isRecording ? 'opacity-100' : 'opacity-70'}`}
-            >
-              {feedback ? (
-                <TranscriptWithFeedback
-                  transcription={script.replace(/[*_#]/g, '')}
-                  pronunciationFeedback={feedback.pronunciationFeedback}
-                />
-              ) : isRecording ? (
-                <RealTimeScriptHighlight script={script} realTimeTranscript={realTimeTranscript} />
-              ) : (
-                <div className="text-lg">
-                  <ReactMarkdown>{script}</ReactMarkdown>
-                </div>
-              )}
-            </div>
+  const { instructions, readingText } = parseScript(script);
 
-            {isRecording && realTimeTranscript && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-4 bg-primary/5 rounded-xl border border-primary/20"
+  return (
+    <div className="space-y-4">
+      {/* Instructions Box */}
+      <Card className="border-2 border-primary/20 overflow-hidden bg-card/50 backdrop-blur-sm">
+        <CardHeader className="bg-primary/5 pb-3">
+          <CardTitle className="font-mono text-sm uppercase tracking-wider text-muted-foreground">
+            Instructions
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-4 pb-4">
+          <div className="text-sm leading-relaxed text-foreground/80">
+            <ReactMarkdown>{instructions}</ReactMarkdown>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Reading Text Box */}
+      <Card className="border-2 border-primary/20 overflow-hidden bg-card/50 backdrop-blur-sm">
+        <CardHeader className="bg-primary/5 pb-3">
+          <div className="flex justify-between items-center">
+            <CardTitle className="font-mono text-sm uppercase tracking-wider text-muted-foreground">
+              Read This Text
+            </CardTitle>
+            {onLoadNewScript && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onLoadNewScript}
+                disabled={isRecording}
+                aria-label="Generate a new practice script"
               >
-                <p className="text-[10px] font-mono uppercase tracking-widest text-primary mb-2 flex items-center gap-2">
-                  <Mic className="h-3 w-3 animate-pulse" /> Live Transcription
-                </p>
-                <p className="text-sm text-foreground/80 leading-relaxed font-medium italic">
-                  "{realTimeTranscript}..."
-                </p>
-              </motion.div>
+                <RefreshCw className="h-4 w-4 mr-2" /> New
+              </Button>
             )}
           </div>
-        </div>
-        {isRecording && (
-          <div className="absolute top-4 right-4 animate-pulse">
-            <Badge variant="destructive" className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-              REC {formatTime(recordingTime)}
-            </Badge>
+        </CardHeader>
+        <CardContent className="pt-4 relative">
+          <div className="h-[300px] overflow-y-auto rounded-lg" ref={scrollViewportRef}>
+            <div className="space-y-6 pr-4">
+              <div
+                className={`leading-relaxed font-sans transition-opacity ${isRecording ? 'opacity-100' : 'opacity-70'}`}
+              >
+                {feedback ? (
+                  <TranscriptWithFeedback
+                    transcription={readingText.replace(/[*_#]/g, '')}
+                    pronunciationFeedback={feedback.pronunciationFeedback}
+                  />
+                ) : isRecording ? (
+                  <RealTimeScriptHighlight script={readingText} realTimeTranscript={realTimeTranscript} />
+                ) : (
+                  <div className="text-lg">
+                    <ReactMarkdown>{readingText}</ReactMarkdown>
+                  </div>
+                )}
+              </div>
+
+              {isRecording && realTimeTranscript && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 bg-primary/5 rounded-xl border border-primary/20"
+                >
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-primary mb-2 flex items-center gap-2">
+                    <Mic className="h-3 w-3 animate-pulse" /> Live Transcription
+                  </p>
+                  <p className="text-sm text-foreground/80 leading-relaxed font-medium italic">
+                    "{realTimeTranscript}..."
+                  </p>
+                </motion.div>
+              )}
+            </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
+          {isRecording && (
+            <div className="absolute top-4 right-4 animate-pulse">
+              <Badge variant="destructive" className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                REC {formatTime(recordingTime)}
+              </Badge>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
