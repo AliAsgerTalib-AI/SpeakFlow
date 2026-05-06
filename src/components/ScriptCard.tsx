@@ -34,26 +34,10 @@ export const ScriptCard: React.FC<ScriptCardProps> = ({
   };
 
 
-  const { instructions, readingText } = parseScript(script);
+  const { readingText } = parseScript(script);
 
   return (
-    <div className="space-y-4">
-      {/* Instructions Box */}
-      <Card className="border-2 border-primary/20 overflow-hidden bg-card/50 backdrop-blur-sm">
-        <CardHeader className="bg-primary/5 pb-3">
-          <CardTitle className="font-mono text-sm uppercase tracking-wider text-muted-foreground">
-            Instructions
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-4 pb-4">
-          <div className="text-sm leading-relaxed text-foreground/80">
-            <ReactMarkdown>{instructions}</ReactMarkdown>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Reading Text Box */}
-      <Card className="border-2 border-primary/20 overflow-hidden bg-card/50 backdrop-blur-sm">
+    <Card className="border-2 border-primary/20 overflow-hidden bg-card/50 backdrop-blur-sm">
         <CardHeader className="bg-primary/5 pb-3">
           <div className="flex justify-between items-center">
             <CardTitle className="font-mono text-sm uppercase tracking-wider text-muted-foreground">
@@ -100,6 +84,5 @@ export const ScriptCard: React.FC<ScriptCardProps> = ({
           )}
         </CardContent>
       </Card>
-    </div>
   );
 };

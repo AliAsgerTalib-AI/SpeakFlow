@@ -150,14 +150,10 @@ export async function generatePracticeScript(
 ): Promise<string> {
   try {
     const modePrompts: Record<string, string> = {
-      general: `Generate a short (30-60 second) public speaking practice script about "%TOPIC%".
-    It should be professional, engaging, and designed to help build presentation skills. Make it suitable for delivering in one breath.`,
-      interview: `Generate a behavioral interview question about "%TOPIC%" that a candidate should answer in 30-60 seconds.
-    Structure: Start with the question, then provide guidance on using the STAR method (Situation, Task, Action, Result) for a structured response.`,
-      presentation: `Generate a 30-60 second presentation snippet about "%TOPIC%" as if pitching to an audience.
-    Focus on clarity, engagement, and a compelling call to action. Include a hook at the start.`,
-      sales: `Generate a 30-60 second sales pitch about "%TOPIC%" that should persuade a skeptical listener.
-    Include: Hook, Value Proposition, Key Benefit, and Call to Action. Make it conversational and confident.`,
+      general: `Generate ONLY a short (30-60 second) public speaking script about "%TOPIC%". It should be professional and engaging. Do not include any instructions or preamble.`,
+      interview: `Generate ONLY a 30-60 second sample answer to a behavioral interview question about "%TOPIC%". Provide just the answer itself, no instructions or guidance. Do not include the question.`,
+      presentation: `Generate ONLY a 30-60 second presentation snippet about "%TOPIC%". Provide just the content to deliver, no instructions or guidance.`,
+      sales: `Generate ONLY a 30-60 second sales pitch about "%TOPIC%". Provide just the pitch itself, no instructions or guidance.`,
     };
 
     const topicsGeneral = ["innovation", "leadership", "teamwork", "resilience", "communication", "confidence", "problem-solving", "growth mindset"];
