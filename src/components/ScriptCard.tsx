@@ -50,29 +50,32 @@ export const ScriptCard: React.FC<ScriptCardProps> = ({
     const wordStatuses = computeWordStatuses(scriptWords, transcriptWords);
     const currentWordIndex = wordStatuses.findIndex(status => status === 'current');
 
-    if (currentWordIndex === -1) return;
+    if (currentWordIndex === -1) {
+      console.log('No current word found');
+      return;
+    }
 
     const wordElements = scrollViewportRef.current.querySelectorAll('span[data-word-index]');
-    if (wordElements.length === 0) return;
+    console.log('Found word elements:', wordElements.length, 'looking for index:', currentWordIndex);
+
+    if (wordElements.length === 0) {
+      console.log('No word elements found in viewport');
+      return;
+    }
 
     const currentWordElement = wordElements[currentWordIndex] as HTMLElement;
-    if (!currentWordElement) return;
-
-    const scrollContainer = scrollViewportRef.current;
-    const scrollTop = scrollContainer.scrollTop;
-    const viewportHeight = scrollContainer.clientHeight;
-    const scrollHeight = scrollContainer.scrollHeight;
-    const wordTop = currentWordElement.offsetTop;
-    const wordHeight = currentWordElement.offsetHeight;
-
-    const targetScroll = Math.min(
-      wordTop - viewportHeight / 3,
-      scrollHeight - viewportHeight
-    );
-
-    if (wordTop < scrollTop || wordTop + wordHeight > scrollTop + viewportHeight) {
-      scrollContainer.scrollTop = Math.max(0, targetScroll);
+    if (!currentWordElement) {
+      console.log('Current word element not found at index:', currentWordIndex);
+      return;
     }
+
+    console.log('Scrolling to word:', currentWordElement.textContent, 'at index:', currentWordIndex);
+
+    // Use scrollIntoView for more reliable scrolling
+    currentWordElement.scrollIntoView({
+      behavior: 'auto',
+      block: 'center'
+    });
   }, [isRecording, realTimeTranscript, script]);
 
   const { instructions, readingText } = parseScript(script);
